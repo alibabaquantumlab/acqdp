@@ -1,0 +1,1186 @@
+
+
+<!doctype html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>acqdp.circuit package &#8212; Alibaba Cloud Quantum Development Platform 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/bizstyle.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Demo: The Quantum Approximate Optimization Algorithm (QAOA)" href="qaoa.html" />
+    <link rel="prev" title="Tensor network and its contractions" href="tensor_network.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="qaoa.html" title="Demo: The Quantum Approximate Optimization Algorithm (QAOA)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tensor_network.html" title="Tensor network and its contractions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">acqdp.circuit package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="acqdp-circuit-package">
+<h1>acqdp.circuit package<a class="headerlink" href="#acqdp-circuit-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-acqdp.circuit.circuit">
+<span id="acqdp-circuit-circuit-module"></span><h2>acqdp.circuit.circuit module<a class="headerlink" href="#module-acqdp.circuit.circuit" title="Permalink to this headline">¶</a></h2>
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.INDENT">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">INDENT</code><em class="property"> = '  '</em><a class="headerlink" href="#acqdp.circuit.circuit.INDENT" title="Permalink to this definition">¶</a></dt>
+<dd><p>The unit of indentation used for <a class="reference internal" href="#acqdp.circuit.circuit.Operation.tree_string" title="acqdp.circuit.circuit.Operation.tree_string"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Operation.tree_string()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.Operation">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">Operation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'GenOp'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Operation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Base class for quantum opertations.</p>
+<p>By itself, it can represent a generic quantum operation, although one would
+not be able to do much with it. Usually, one should use
+<a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImmutableOperation</span></code></a> (or more commonly, one of its subclasses) for
+simple quantum operations with an explicit tensor representation, and
+<a class="reference internal" href="#acqdp.circuit.circuit.Circuit" title="acqdp.circuit.circuit.Circuit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Circuit</span></code></a> for quantum operations better represented as a composition
+of simpler operations. (Technically an <a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImmutableOperation</span></code></a> can
+represent a complex operation by using a <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorNetwork</span></code> as the data,
+but that would be an uncommon use case.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the quantum operation. Defaults to “GenOp”.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Operation.tree_string">
+<code class="sig-name descname">tree_string</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">indent</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Operation.tree_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Operation.tree_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an indented string that describes the operation.</p>
+<p>This is mainly used for visualization of <a class="reference internal" href="#acqdp.circuit.circuit.Circuit" title="acqdp.circuit.circuit.Circuit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Circuit</span></code></a> instances.
+Notably, the returned string should not include the name of the
+operation, which would already be included by default in the tree
+string of the “parent” operation.</p>
+<p>It is fine to return an empty string, but otherwise, the string should
+be indented with <cite>indent</cite> copies of the string <a class="reference internal" href="#acqdp.circuit.circuit.INDENT" title="acqdp.circuit.circuit.INDENT"><code class="xref py py-data docutils literal notranslate"><span class="pre">INDENT</span></code></a>, and
+terminated with a newline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>indent</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – The amount of indent needed. Defaults to 0.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Operation.__mul__">
+<code class="sig-name descname">__mul__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">other</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Operation.__mul__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Operation.__mul__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return two operations in parallel as a quantum circuit.</p>
+<p>The resulting <a class="reference internal" href="#acqdp.circuit.circuit.Circuit" title="acqdp.circuit.circuit.Circuit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Circuit</span></code></a> will have a number of qubits <span class="math notranslate nohighlight">\(n\)</span>
+equal to the total number of qubits in both operands, indexed by
+integers from 0 to <span class="math notranslate nohighlight">\(n-1\)</span>. The qubits are ordered naturally, i.e.,
+qubits in the left operand come first, and within both operands the
+original qubit orders are preserved.</p>
+<p>Note that this function will regard both operands as atomic operations:
+No attempt is made to “expand” the operands even if one or both of them
+are themselves <a class="reference internal" href="#acqdp.circuit.circuit.Circuit" title="acqdp.circuit.circuit.Circuit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Circuit</span></code></a> instances.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Operation.__or__">
+<code class="sig-name descname">__or__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">other</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Operation.__or__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Operation.__or__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the concatenation of two operations as a quantum circuit.</p>
+<p>The left operand will happen first. Note that this ordering convention
+is different from how the result would be represented as a product of
+matrices. For example, <code class="docutils literal notranslate"><span class="pre">ZeroState</span> <span class="pre">|</span> <span class="pre">HGate</span> <span class="pre">|</span> <span class="pre">ZGate</span></code> will result in the
+state <span class="math notranslate nohighlight">\(ZH|0\rangle\)</span>.</p>
+<p>If the left operand is a <a class="reference internal" href="#acqdp.circuit.circuit.Circuit" title="acqdp.circuit.circuit.Circuit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Circuit</span></code></a> instance, then the qubit names
+in it will be preserved, and the same will apply to the right operand if
+it is a <a class="reference internal" href="#acqdp.circuit.circuit.Circuit" title="acqdp.circuit.circuit.Circuit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Circuit</span></code></a> instance too; otherwise qubits in the right
+operand will be indexed by integers from 0. The qubit names will
+determine how the two circuits are connected.</p>
+<p>If the left operand is not a <a class="reference internal" href="#acqdp.circuit.circuit.Circuit" title="acqdp.circuit.circuit.Circuit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Circuit</span></code></a> instance, then the qubits
+in <em>both</em> operands will be indexed by integers from 0, and the circuits
+will be connected correspondingly.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Operation.tensor_pure">
+<em class="property">property </em><code class="sig-name descname">tensor_pure</code><a class="headerlink" href="#acqdp.circuit.circuit.Operation.tensor_pure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the operation into a tensor network representing the action
+of the operation in the pure state picture.</p>
+<p>Examples of tensor representations in the pure state picture include
+state vectors of pure states, and unitary matrices of unitary gates.</p>
+<p>Raises an error if the operation is not pure.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Operation.tensor_density">
+<em class="property">property </em><code class="sig-name descname">tensor_density</code><a class="headerlink" href="#acqdp.circuit.circuit.Operation.tensor_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the operation into a tensor network representing the action
+of the operation in the density matrix picture.</p>
+<p>Examples of tensor representations in the density matrix picture include
+density matrices of general quantum states, and Choi matrices of quantum
+operations. As a special case, when the operation is pure, the tensor
+network returned by <a class="reference internal" href="#acqdp.circuit.circuit.Operation.tensor_density" title="acqdp.circuit.circuit.Operation.tensor_density"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tensor_density</span></code></a> will consist of two disjoint
+components, one being the tensor network returned by <a class="reference internal" href="#acqdp.circuit.circuit.Operation.tensor_pure" title="acqdp.circuit.circuit.Operation.tensor_pure"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tensor_pure</span></code></a>
+and the other being its adjoint.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Operation.tensor_control">
+<em class="property">property </em><code class="sig-name descname">tensor_control</code><a class="headerlink" href="#acqdp.circuit.circuit.Operation.tensor_control" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a controlled operation into a tensor network in the pure
+state picture, but with only one open edge for each controlling qubit.</p>
+<p>A qubit in an operation can be regarded as a controlling qubit if its
+value in the computational basis is never changed by the operation. As
+such, its input wire and output wire can be represented by the same edge
+in a tensor network, thus simplifying the tensor network. In other
+words, the <a class="reference internal" href="#acqdp.circuit.circuit.Operation.tensor_pure" title="acqdp.circuit.circuit.Operation.tensor_pure"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tensor_pure</span></code></a> for a controlled operation will be a
+block diagonal matrix, and its <a class="reference internal" href="#acqdp.circuit.circuit.Operation.tensor_control" title="acqdp.circuit.circuit.Operation.tensor_control"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tensor_control</span></code></a> will be a more
+compact representation of the same matrix.</p>
+<p>As a special case, if the operation is a diagonal gate, then every qubit
+can be regarded as a controlling qubit. See <a class="reference internal" href="#acqdp.circuit.circuit.Diagonal" title="acqdp.circuit.circuit.Diagonal"><code class="xref py py-class docutils literal notranslate"><span class="pre">Diagonal</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Operation.adjoint">
+<code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Operation.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Operation.adjoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
+<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.ImmutableOperation">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">ImmutableOperation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">numpy.ndarray</span></em>, <em class="sig-param"><span class="n">shape</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'ImOp'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ImmutableOperation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ImmutableOperation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.Operation</span></code></a></p>
+<p>Class for quantum operations with explicit tensor representations. The
+operation is not supposed to be modified.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or </em><em>np.ndarray</em>) – A tensor representation of the operation. For this base class,
+it will be the tensor returned by <a class="reference internal" href="#acqdp.circuit.circuit.Operation.tensor_density" title="acqdp.circuit.circuit.Operation.tensor_density"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tensor_density</span></code></a>.
+This means that for an operation with <span class="math notranslate nohighlight">\(n\)</span> input qubits and
+<span class="math notranslate nohighlight">\(m\)</span> output qubits, the tensor should be of rank <span class="math notranslate nohighlight">\(2(n+m)\)</span>.
+A derived class of this may use different representation more suitable
+for a specific class of operations.</p>
+</dd>
+<dt class="field-even">Variables</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>shape</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>]</em>) – A list of strings describing the input and output qubits of
+the quantum operation, with each string describing a qubit involved. For
+this base class, each string should be one of “i”, “o” or “io”,
+indicating whether each qubit is an input qubit, an output qubit, or
+both.</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the quantum operation. Defaults to “ImOp”.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.ImmutableOperation.process">
+<code class="sig-name descname">process</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ImmutableOperation.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ImmutableOperation.process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the input data into an appropriately shaped tensor, and
+initialize the operation with this tensor.</p>
+<p>A derived class that uses a different tensor representation of the
+operation should override this function in order to do shape checking
+and initialization correctly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or
+</em><em>np.ndarray</em>) – The <code class="docutils literal notranslate"><span class="pre">data</span></code> parameter passed to
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">ImmutableOperation.__init__()</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.ImmutableOperation.operation_from_kraus">
+<em class="property">classmethod </em><code class="sig-name descname">operation_from_kraus</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">shape</span></em>, <em class="sig-param"><span class="n">kraus</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'ImOp_Kraus'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ImmutableOperation.operation_from_kraus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ImmutableOperation.operation_from_kraus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a quantum operation from its Kraus operator representation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>]</em>) – The shape of the operation, in the same format as the
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">shape</span></code> attribute of <a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImmutableOperation</span></code></a>.</p></li>
+<li><p><strong>kraus</strong> (<em>List</em><em>[</em><em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or
+</em><em>np.ndarray</em><em>]</em>) – The list of Kraus operators.</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the resulting quantum operation. Defaults to
+“ImOp_Kraus”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A quantum operation constructed from the given Kraus operator
+representation.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation">ImmutableOperation</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.ImmutableOperation.is_pure">
+<em class="property">property </em><code class="sig-name descname">is_pure</code><a class="headerlink" href="#acqdp.circuit.circuit.ImmutableOperation.is_pure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the operation is a pure operation.</p>
+<p>Pure operations include pure states, isometries, projections and their
+combinations.</p>
+<p>Note that currently this function determines whether an operation is
+pure solely based on the class of the operation, without inspecting the
+actual data. For example, if a quantum state <code class="docutils literal notranslate"><span class="pre">s</span></code> is initialized with
+<code class="docutils literal notranslate"><span class="pre">s</span> <span class="pre">=</span> <span class="pre">State(num_qubits,</span> <span class="pre">data)</span></code>, then <code class="docutils literal notranslate"><span class="pre">s.is_pure</span></code> will always be False
+and <code class="docutils literal notranslate"><span class="pre">s.tensor_pure</span></code> will always raise an error, even if <code class="docutils literal notranslate"><span class="pre">data</span></code> is
+actually the density matrix of a pure state.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.State">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">State</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_qubits</span></em>, <em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">numpy.ndarray</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'State'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#State"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.State" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.ImmutableOperation</span></code></a></p>
+<p>Class for simple quantum states.</p>
+<p>Quantum states are regarded as a special case of quantum operations where
+there is no input qubit, and each qubit is an output qubit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_qubits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Number of qubits in the state.</p></li>
+<li><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or </em><em>np.ndarray</em>) – The density matrix representation of the state.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Variables</dt>
+<dd class="field-even"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the quantum state. Defaults to “State”.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.Measurement">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">Measurement</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_qubits</span></em>, <em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">numpy.ndarray</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'Meas'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Measurement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Measurement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.ImmutableOperation</span></code></a></p>
+<p>Class for simple (destructive) measurements.</p>
+<p>Destructive measurements are regarded as a special case of quantum
+operations where each qubit is an input qubit, and there is no output
+qubit. Such a measurement maps an arbitrary quantum state to a number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_qubits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Number of qubits measured.</p></li>
+<li><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or </em><em>np.ndarray</em>) – The POVM (positive operator-valued measure) representation of
+the measurement.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Variables</dt>
+<dd class="field-even"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the quantum state. Defaults to “Meas”.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.Channel">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">Channel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_qubits</span></em>, <em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">numpy.ndarray</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'Channel'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.ImmutableOperation</span></code></a></p>
+<p>Class for simple quantum channels.</p>
+<p>This class is used for the common case where the input and output Hilbert
+spaces are the same, i.e., each qubit is both an input qubit and an output
+qubit. For channels that do not satisfy this constraint, please use
+<a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImmutableOperation</span></code></a> directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_qubits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Number of qubits the channel operates on.</p></li>
+<li><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or </em><em>np.ndarray</em>) – The tensor representation of the channel in the density matrix
+picture.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Variables</dt>
+<dd class="field-even"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the quantum operation. Defaults to “Channel”.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.PureOperation">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">PureOperation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">numpy.ndarray</span></em>, <em class="sig-param"><span class="n">shape</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'PureOp'</span></em>, <em class="sig-param"><span class="n">self_adjoint</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#PureOperation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.PureOperation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.ImmutableOperation</span></code></a></p>
+<p>Class for simple pure quantum operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or </em><em>np.ndarray</em>) – The tensor representation of the operation in the pure state
+picture. It will be the tensor returned by
+<a class="reference internal" href="#acqdp.circuit.circuit.Operation.tensor_pure" title="acqdp.circuit.circuit.Operation.tensor_pure"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tensor_pure</span></code></a>. This means that for an operation with
+<span class="math notranslate nohighlight">\(n\)</span> input qubits and <span class="math notranslate nohighlight">\(m\)</span> output qubits, the tensor should be
+of rank <span class="math notranslate nohighlight">\(n+m\)</span>, i.e., half the rank of the tensor in the density
+matrix picture.</p>
+</dd>
+<dt class="field-even">Variables</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>shape</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>]</em>) – The shape of the operation, in the same format as the
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">shape</span></code> attribute of <a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImmutableOperation</span></code></a>.</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the quantum operation. Defaults to “PureOp”.</p></li>
+<li><p><strong>self_adjoint</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether the operation is self-adjoint. Defaults to
+False.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.PureOperation.set_adjoint_op">
+<code class="sig-name descname">set_adjoint_op</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">adjoint_op</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#PureOperation.set_adjoint_op"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.PureOperation.set_adjoint_op" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the known adjoint of the operation.</p>
+<p>Usually, the adjoint of a pure operation is constructed on demand by
+calculating the <a class="reference internal" href="#acqdp.circuit.circuit.Operation.tensor_pure" title="acqdp.circuit.circuit.Operation.tensor_pure"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tensor_pure</span></code></a> of the operation, then
+constructing a new <a class="reference internal" href="#acqdp.circuit.circuit.PureOperation" title="acqdp.circuit.circuit.PureOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">PureOperation</span></code></a> object, which can be an
+inefficient process. By setting the adjoint of a operation to a known
+value, one can bypass this procedure. Note that, for efficiency, there
+is no check that <code class="docutils literal notranslate"><span class="pre">adjoint_op</span></code> is actually the adjoint of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+<p>The adjoint of <code class="docutils literal notranslate"><span class="pre">adjoint_op</span></code> is also set to <code class="docutils literal notranslate"><span class="pre">self</span></code> so there is no
+need to use this function twice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>adjoint_op</strong> (<a class="reference internal" href="#acqdp.circuit.circuit.PureOperation" title="acqdp.circuit.circuit.PureOperation"><em>PureOperation</em></a>) – The known adjoint of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.PureOperation.process">
+<code class="sig-name descname">process</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#PureOperation.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.PureOperation.process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the input data into an appropriately shaped tensor, and
+initialize the operation with this tensor.</p>
+<p>A derived class that uses a different tensor representation of the
+operation should override this function in order to do shape checking
+and initialization correctly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or
+</em><em>np.ndarray</em>) – The <code class="docutils literal notranslate"><span class="pre">data</span></code> parameter passed to
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">ImmutableOperation.__init__()</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.PureOperation.adjoint">
+<code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#PureOperation.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.PureOperation.adjoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
+<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.PureState">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">PureState</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_qubits</span></em>, <em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">numpy.ndarray</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'PureState'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#PureState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.PureState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.PureOperation" title="acqdp.circuit.circuit.PureOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.PureOperation</span></code></a>, <a class="reference internal" href="#acqdp.circuit.circuit.State" title="acqdp.circuit.circuit.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.State</span></code></a></p>
+<p>Class for simple pure quantum states.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_qubits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Number of qubits in the state.</p></li>
+<li><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or </em><em>np.ndarray</em>) – The state vector representation of the state.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Variables</dt>
+<dd class="field-even"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the quantum state. Defaults to “PureState”.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.PureMeas">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">PureMeas</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_qubits</span></em>, <em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">numpy.ndarray</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'PureMeas'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#PureMeas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.PureMeas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.PureOperation" title="acqdp.circuit.circuit.PureOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.PureOperation</span></code></a>, <a class="reference internal" href="#acqdp.circuit.circuit.Measurement" title="acqdp.circuit.circuit.Measurement"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.Measurement</span></code></a></p>
+<p>Class for simple projective measurements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_qubits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Number of qubits measured.</p></li>
+<li><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or </em><em>np.ndarray</em>) – The vector representation of the measurement. Note that it
+should be the <em>complex conjugation</em> of the state vector of the state
+projected onto.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Variables</dt>
+<dd class="field-even"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the quantum state. Defaults to “PureMeas”.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.Unitary">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">Unitary</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_qubits</span></em>, <em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">numpy.ndarray</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'Unitary'</span></em>, <em class="sig-param"><span class="n">self_adjoint</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Unitary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Unitary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.PureOperation" title="acqdp.circuit.circuit.PureOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.PureOperation</span></code></a>, <a class="reference internal" href="#acqdp.circuit.circuit.Channel" title="acqdp.circuit.circuit.Channel"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.Channel</span></code></a></p>
+<p>Class for simple unitary gates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_qubits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Number of qubits the unitary operates on.</p></li>
+<li><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or </em><em>np.ndarray</em>) – The matrix representation of the unitary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Variables</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the quantum state. Defaults to “Unitary”.</p></li>
+<li><p><strong>self_adjoint</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether the unitary is self-adjoint. Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.ControlledOperation">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">ControlledOperation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">numpy.ndarray</span></em>, <em class="sig-param"><span class="n">shape</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'C-Op'</span></em>, <em class="sig-param"><span class="n">self_adjoint</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ControlledOperation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ControlledOperation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.PureOperation" title="acqdp.circuit.circuit.PureOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.PureOperation</span></code></a></p>
+<p>Class for simple controlled operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or </em><em>np.ndarray</em>) – The tensor representation of the controlled operation. It will
+be the tensor returned by <a class="reference internal" href="#acqdp.circuit.circuit.Operation.tensor_control" title="acqdp.circuit.circuit.Operation.tensor_control"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tensor_control</span></code></a>. This means
+that for an operation with <span class="math notranslate nohighlight">\(k\)</span> controlling qubits, <span class="math notranslate nohighlight">\(n\)</span>
+non-control input qubits and <span class="math notranslate nohighlight">\(m\)</span> non-control output qubits, the
+tensor should be of rank <span class="math notranslate nohighlight">\(k+n+m\)</span>.</p>
+</dd>
+<dt class="field-even">Variables</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>shape</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>]</em>) – The shape of the operation, in the same format as the
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">shape</span></code> attribute of <a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImmutableOperation</span></code></a>, but in addition
+to “i”, “o”, and “io”, the string “c” is also allowed, which indicates a
+controlling qubit.</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the quantum operation. Defaults to “C-Op”.</p></li>
+<li><p><strong>self_adjoint</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether the operation is self-adjoint. Defaults to
+False.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.ControlledOperation.process">
+<code class="sig-name descname">process</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ControlledOperation.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ControlledOperation.process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the input data into an appropriately shaped tensor, and
+initialize the operation with this tensor.</p>
+<p>A derived class that uses a different tensor representation of the
+operation should override this function in order to do shape checking
+and initialization correctly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or
+</em><em>np.ndarray</em>) – The <code class="docutils literal notranslate"><span class="pre">data</span></code> parameter passed to
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">ImmutableOperation.__init__()</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.ControlledOperation.adjoint">
+<code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ControlledOperation.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ControlledOperation.adjoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
+<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.Diagonal">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">Diagonal</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_cbits</span></em>, <em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">numpy.ndarray</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'Diag'</span></em>, <em class="sig-param"><span class="n">self_adjoint</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Diagonal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Diagonal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.ControlledOperation" title="acqdp.circuit.circuit.ControlledOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.ControlledOperation</span></code></a></p>
+<p>Class for simple diagonal gates.</p>
+<p>A diagonal gate can be regarded as a controlled phase shift, where every
+qubit is a controlling qubit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_qubits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Number of qubits the diagonal gate operates on.</p></li>
+<li><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or </em><em>np.ndarray</em>) – The diagonal elements of the matrix representation of the gate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Variables</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the quantum state. Defaults to “Diag”.</p></li>
+<li><p><strong>self_adjoint</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether the gate is self-adjoint. Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.XGate">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">XGate</code><em class="property"> = Unitary &quot;X&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.XGate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit Pauli X gate.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.YGate">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">YGate</code><em class="property"> = Unitary &quot;Y&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.YGate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit Pauli Y gate.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.ZGate">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">ZGate</code><em class="property"> = Diagonal &quot;Z&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.ZGate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit Pauli Z gate.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.HGate">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">HGate</code><em class="property"> = Unitary &quot;H&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.HGate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit Hadamard gate.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.TGate">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">TGate</code><em class="property"> = Diagonal &quot;T&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.TGate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit T gate, i.e., a <span class="math notranslate nohighlight">\(\pi/4\)</span> rotation around the Z axis on the Bloch sphere.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.SGate">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">SGate</code><em class="property"> = Diagonal &quot;S&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.SGate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit S gate, i.e., a <span class="math notranslate nohighlight">\(\pi/2\)</span> rotation around the Z axis on the Bloch sphere.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.Trace">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">Trace</code><em class="property"> = Measurement &quot;Tr&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.Trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>The partial trace operation, defined as an measurement that maps every
+normalized single-qubit state to 1.</p>
+<p>In a circuit, a partial trace operation can simulate discarding a qubit. Note
+that this operation is inherently not pure since discarding one part of an
+entangled pure state will result in a mixed state.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.IGate">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">IGate</code><em class="property"> = Unitary &quot;I&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.IGate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit Identity gate.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.SWAPGate">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">SWAPGate</code><em class="property"> = Unitary &quot;SWAP&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.SWAPGate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Two-qubit SWAP gate.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.CZGate">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">CZGate</code><em class="property"> = Diagonal &quot;CZ&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.CZGate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Two-qubit CZ gate.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.XHalfGate">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">XHalfGate</code><em class="property"> = Unitary &quot;X/2&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.XHalfGate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit <span class="math notranslate nohighlight">\(\sqrt{X}\)</span> gate.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.YHalfGate">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">YHalfGate</code><em class="property"> = Unitary &quot;Y/2&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.YHalfGate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit <span class="math notranslate nohighlight">\(\sqrt{Y}\)</span> gate.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.CNOTGate">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">CNOTGate</code><em class="property"> = ControlledOperation &quot;CNOT&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.CNOTGate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Two-qubit CNOT gate.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.ZeroState">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">ZeroState</code><em class="property"> = PureState &quot;|0&gt;&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.ZeroState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit state <span class="math notranslate nohighlight">\(|0\rangle\)</span>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.OneState">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">OneState</code><em class="property"> = PureState &quot;|1&gt;&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.OneState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit state <span class="math notranslate nohighlight">\(|1\rangle\)</span>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.CompState">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">CompState</code><em class="property"> = [PureState &quot;|0&gt;&quot;, PureState &quot;|1&gt;&quot;]</em><a class="headerlink" href="#acqdp.circuit.circuit.CompState" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of the computational basis states, <span class="math notranslate nohighlight">\(|0\rangle\)</span> and <span class="math notranslate nohighlight">\(|1\rangle\)</span>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.PlusState">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">PlusState</code><em class="property"> = PureState &quot;|+&gt;&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.PlusState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit state <span class="math notranslate nohighlight">\(|+\rangle\)</span>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.MinusState">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">MinusState</code><em class="property"> = PureState &quot;|-&gt;&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.MinusState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit state <span class="math notranslate nohighlight">\(|-\rangle\)</span>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.FourierState">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">FourierState</code><em class="property"> = [PureState &quot;|+&gt;&quot;, PureState &quot;|-&gt;&quot;]</em><a class="headerlink" href="#acqdp.circuit.circuit.FourierState" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of the Hadamard basis states, <span class="math notranslate nohighlight">\(|+\rangle\)</span> and <span class="math notranslate nohighlight">\(|-\rangle\)</span>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.ZeroMeas">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">ZeroMeas</code><em class="property"> = PureMeas &quot;&lt;0|&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.ZeroMeas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit measurement <span class="math notranslate nohighlight">\(\langle 0|\)</span>, the adjoint of <span class="math notranslate nohighlight">\(|0\rangle\)</span>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.OneMeas">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">OneMeas</code><em class="property"> = PureMeas &quot;&lt;1|&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.OneMeas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit measurement <span class="math notranslate nohighlight">\(\langle 1|\)</span>, the adjoint of <span class="math notranslate nohighlight">\(|1\rangle\)</span>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.CompMeas">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">CompMeas</code><em class="property"> = [PureMeas &quot;&lt;0|&quot;, PureMeas &quot;&lt;1|&quot;]</em><a class="headerlink" href="#acqdp.circuit.circuit.CompMeas" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of the computational basis measurements, <span class="math notranslate nohighlight">\(\langle 0|\)</span> and <span class="math notranslate nohighlight">\(\langle 1|\)</span>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.PlusMeas">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">PlusMeas</code><em class="property"> = PureMeas &quot;&lt;+|&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.PlusMeas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit measurement <span class="math notranslate nohighlight">\(\langle +|\)</span>, the adjoint of <span class="math notranslate nohighlight">\(|+\rangle\)</span>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.MinusMeas">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">MinusMeas</code><em class="property"> = PureMeas &quot;&lt;-|&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.MinusMeas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit measurement <span class="math notranslate nohighlight">\(\langle -|\)</span>, the adjoint of <span class="math notranslate nohighlight">\(|-\rangle\)</span>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.FourierMeas">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">FourierMeas</code><em class="property"> = [PureMeas &quot;&lt;+|&quot;, PureMeas &quot;&lt;-|&quot;]</em><a class="headerlink" href="#acqdp.circuit.circuit.FourierMeas" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of the computational basis measurements, <span class="math notranslate nohighlight">\(\langle +|\)</span> and <span class="math notranslate nohighlight">\(\langle -|\)</span>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="acqdp.circuit.circuit.NDCompMeas">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">NDCompMeas</code><em class="property"> = Channel &quot;ND&quot;</em><a class="headerlink" href="#acqdp.circuit.circuit.NDCompMeas" title="Permalink to this definition">¶</a></dt>
+<dd><p>A non-destructive computational basis measurement.</p>
+<p>This is equivalent to <a class="reference internal" href="#acqdp.circuit.noise.Dephasing" title="acqdp.circuit.noise.Dephasing"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.noise.Dephasing()</span></code></a>, but with a
+slightly more efficient tensor network representation.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.XRotation">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">XRotation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">angle</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#XRotation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.XRotation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.Unitary" title="acqdp.circuit.circuit.Unitary"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.Unitary</span></code></a></p>
+<p>Class for X Rotation gates in the form of <span class="math notranslate nohighlight">\(e^{i\theta X}\)</span>.</p>
+<p>Note that, since the eigenvalues of the Pauli operator <span class="math notranslate nohighlight">\(X\)</span> are 1 and
+-1, this actually corresponds to a rotation by <span class="math notranslate nohighlight">\(2\theta\)</span> on the Bloch
+sphere. For example, <code class="docutils literal notranslate"><span class="pre">XRotation(np.pi)</span></code> is a global phase operation with
+no physical effect, equivalent to a rotation by <span class="math notranslate nohighlight">\(2\pi\)</span> on the Bloch
+sphere. On the other hand, <code class="docutils literal notranslate"><span class="pre">XRotation(np.pi</span> <span class="pre">/</span> <span class="pre">2)</span></code> is equivalent to the
+Pauli X operator up to a global phase, i.e., a rotation by <span class="math notranslate nohighlight">\(\pi\)</span>
+around the X axis on the Bloch sphere.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><p><strong>angle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – The rotation angle <span class="math notranslate nohighlight">\(\theta\)</span>.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.XRotation.adjoint">
+<code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#XRotation.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.XRotation.adjoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
+<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.ZRotation">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">ZRotation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">angle</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ZRotation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ZRotation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.Diagonal" title="acqdp.circuit.circuit.Diagonal"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.Diagonal</span></code></a></p>
+<p>Class for Z Rotation gates in the form of <span class="math notranslate nohighlight">\(e^{i\theta Z}\)</span>.</p>
+<p>The same note about <a class="reference internal" href="#acqdp.circuit.circuit.XRotation" title="acqdp.circuit.circuit.XRotation"><code class="xref py py-class docutils literal notranslate"><span class="pre">XRotation</span></code></a> applies here. Furthermore, note that
+the rotation direction is the reverse of the “natural” direction given by
+<span class="math notranslate nohighlight">\(\mathop{\mathrm{diag}}(1, e^{i\theta})\)</span>, since the actual rotation
+is <span class="math notranslate nohighlight">\(\mathop{\mathrm{diag}}(e^{i\theta}, e^{-i\theta})\)</span>. For
+example, <code class="docutils literal notranslate"><span class="pre">ZRotation(-np.pi</span> <span class="pre">/</span> <span class="pre">8)</span></code> and <code class="docutils literal notranslate"><span class="pre">ZRotation(-np.pi</span> <span class="pre">/</span> <span class="pre">4)</span></code> will give
+the T gate and the S gate respectively, up to global phases.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><p><strong>angle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – The rotation angle <span class="math notranslate nohighlight">\(\theta\)</span>.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.ZRotation.adjoint">
+<code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ZRotation.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ZRotation.adjoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
+<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.Circuit">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">Circuit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'Circuit'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Circuit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Circuit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.Operation</span></code></a></p>
+<p>Class for quantum circuits that can be manipulated by adding and removing
+operations.</p>
+<p>Each operation in a circuit has a name that is unique within the circuit,
+not necessarily related to its own <code class="xref py py-attr docutils literal notranslate"><span class="pre">name</span></code> attribute. Each operation
+also has a time step which determines the order of the operations. For
+applications where those do not matter, they can be kept at their default
+values; see <a class="reference internal" href="#acqdp.circuit.circuit.Circuit.append" title="acqdp.circuit.circuit.Circuit.append"><code class="xref py py-meth docutils literal notranslate"><span class="pre">append()</span></code></a> for those default values.</p>
+<p>A circuit is always empty when initialized.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the quantum circuit. Defaults to “Circuit”.</p></li>
+<li><p><strong>operations_by_name</strong> (<em>Dict</em><em>[</em><em>hashable</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)"><em>dict</em></a><em>]</em>) – <p>A dict mapping from operation names to dicts
+describing operations in the circuit. Each of the latter dicts <code class="docutils literal notranslate"><span class="pre">d</span></code> has
+three entries:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">d[&quot;operation&quot;]</span></code> is the actual <a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code></a>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">d[&quot;time_step&quot;]</span></code> gives the time step at which the opration happens.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">d[&quot;qubits&quot;]</span></code> is a list of qubits indicating which qubits in the
+circuit the operation is applied to.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Circuit.max_time">
+<em class="property">property </em><code class="sig-name descname">max_time</code><a class="headerlink" href="#acqdp.circuit.circuit.Circuit.max_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the maximum time step among all operations in the circuit.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Circuit.append">
+<code class="sig-name descname">append</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operation</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation">acqdp.circuit.circuit.Operation</a></span></em>, <em class="sig-param"><span class="n">qubits</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)">int</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">time_step</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)">float</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)">None</a><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Circuit.append"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Circuit.append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an operation to the circuit.</p>
+<p>If a time step is given, the operation is inserted into the circuit at
+the given time. Otherwise, the operation is appended to the end of the
+circuit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>operation</strong> (<a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation"><em>Operation</em></a>) – The operation to add to the circuit.</p></li>
+<li><p><strong>qubits</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a>) – The qubits the operation is applied to. Qubit names can
+be anything as long as they are hashable and comparable with each
+other. Any qubits not already in the circuit are added to the
+circuit.</p></li>
+<li><p><strong>time_step</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a><em>, </em><em>optional</em>) – The time step at which the operation happens. Defaults
+to <a class="reference internal" href="#acqdp.circuit.circuit.Circuit.max_time" title="acqdp.circuit.circuit.Circuit.max_time"><code class="xref py py-attr docutils literal notranslate"><span class="pre">max_time</span></code></a> plus one, which ensures that the operation is
+appended to the end of the cirucit.</p></li>
+<li><p><strong>name</strong> (<em>hashable</em><em>, </em><em>optional</em>) – The name of the operation in the circuit. By default, the
+name is a tuple generated from <code class="docutils literal notranslate"><span class="pre">time_step</span></code> and <code class="docutils literal notranslate"><span class="pre">qubits</span></code>,
+ensuring its uniqueness within the circuit.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Circuit.operations_by_time">
+<em class="property">property </em><code class="sig-name descname">operations_by_time</code><a class="headerlink" href="#acqdp.circuit.circuit.Circuit.operations_by_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an <code class="xref py py-class docutils literal notranslate"><span class="pre">OrderedDict</span></code> of dicts, which is an reorganization
+of <code class="xref py py-attr docutils literal notranslate"><span class="pre">operations_by_name</span></code> such that <code class="docutils literal notranslate"><span class="pre">c.operations_by_time[t][name]</span>
+<span class="pre">==</span> <span class="pre">c.operations_by_name[name]</span></code>, where <code class="docutils literal notranslate"><span class="pre">t</span></code> is the time step of the
+operation in question.</p>
+<p>The returned <code class="docutils literal notranslate"><span class="pre">OrderedDict</span></code> in ordered by increasing time.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Circuit.tree_string">
+<code class="sig-name descname">tree_string</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">indent</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Circuit.tree_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Circuit.tree_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an indented string that describes the operation.</p>
+<p>This is mainly used for visualization of <a class="reference internal" href="#acqdp.circuit.circuit.Circuit" title="acqdp.circuit.circuit.Circuit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Circuit</span></code></a> instances.
+Notably, the returned string should not include the name of the
+operation, which would already be included by default in the tree
+string of the “parent” operation.</p>
+<p>It is fine to return an empty string, but otherwise, the string should
+be indented with <cite>indent</cite> copies of the string <a class="reference internal" href="#acqdp.circuit.circuit.INDENT" title="acqdp.circuit.circuit.INDENT"><code class="xref py py-data docutils literal notranslate"><span class="pre">INDENT</span></code></a>, and
+terminated with a newline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>indent</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – The amount of indent needed. Defaults to 0.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Circuit.all_qubits">
+<em class="property">property </em><code class="sig-name descname">all_qubits</code><a class="headerlink" href="#acqdp.circuit.circuit.Circuit.all_qubits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of all qubits in the circuit.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Circuit.shape">
+<em class="property">property </em><code class="sig-name descname">shape</code><a class="headerlink" href="#acqdp.circuit.circuit.Circuit.shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the shape of the circuit as an operation, in the same format
+as the <code class="xref py py-attr docutils literal notranslate"><span class="pre">shape</span></code> attribute of
+<a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImmutableOperation</span></code></a>.</p>
+<p>Raises an <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></a> if the circuit is invalid. This can happen
+if a qubit is used multiple times at the same time step, or if the
+shapes of adjacent operations on the same qubit do not fit together,
+such as a quantum state followed by another quantum state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Circuit.is_valid">
+<em class="property">property </em><code class="sig-name descname">is_valid</code><a class="headerlink" href="#acqdp.circuit.circuit.Circuit.is_valid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the circuit is valid.</p>
+<p>See <a class="reference internal" href="#acqdp.circuit.circuit.Circuit.shape" title="acqdp.circuit.circuit.Circuit.shape"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shape</span></code></a> for ways a circuit can be invalid.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Circuit.is_pure">
+<em class="property">property </em><code class="sig-name descname">is_pure</code><a class="headerlink" href="#acqdp.circuit.circuit.Circuit.is_pure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the operation is a pure operation.</p>
+<p>Pure operations include pure states, isometries, projections and their
+combinations.</p>
+<p>Similar to <a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation.is_pure" title="acqdp.circuit.circuit.ImmutableOperation.is_pure"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ImmutableOperation.is_pure</span></code></a>, this does not analyze the
+actual action of the circuit, and only checks whether the component
+operations are all pure.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.Circuit.adjoint">
+<code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Circuit.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Circuit.adjoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
+<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.ControlledCircuit">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">ControlledCircuit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">circuit</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">conditioned_on</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ControlledCircuit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ControlledCircuit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.ControlledOperation" title="acqdp.circuit.circuit.ControlledOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.ControlledOperation</span></code></a></p>
+<p>Class for quantum circuits controlled by a single qubit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>circuit</strong> (<a class="reference internal" href="#acqdp.circuit.circuit.Circuit" title="acqdp.circuit.circuit.Circuit"><em>Circuit</em></a>) – The circuit being controlled.</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the controlled circuit. Defaults to “C-&lt;circuit&gt;”, where
+&lt;circuit&gt; is the name of the circuit being controlled.</p></li>
+<li><p><strong>conditioned_on</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether the circuit is applied when the controlling
+qubit is in the <span class="math notranslate nohighlight">\(|1\rangle\)</span> state or the <span class="math notranslate nohighlight">\(|0\rangle\)</span>
+state. Defaults to True, meaning that the circuit is applied when the
+controlling qubit is in the <span class="math notranslate nohighlight">\(|1\rangle\)</span> state.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.ControlledCircuit.tree_string">
+<code class="sig-name descname">tree_string</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">indent</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ControlledCircuit.tree_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ControlledCircuit.tree_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an indented string that describes the operation.</p>
+<p>This is mainly used for visualization of <a class="reference internal" href="#acqdp.circuit.circuit.Circuit" title="acqdp.circuit.circuit.Circuit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Circuit</span></code></a> instances.
+Notably, the returned string should not include the name of the
+operation, which would already be included by default in the tree
+string of the “parent” operation.</p>
+<p>It is fine to return an empty string, but otherwise, the string should
+be indented with <cite>indent</cite> copies of the string <a class="reference internal" href="#acqdp.circuit.circuit.INDENT" title="acqdp.circuit.circuit.INDENT"><code class="xref py py-data docutils literal notranslate"><span class="pre">INDENT</span></code></a>, and
+terminated with a newline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>indent</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – The amount of indent needed. Defaults to 0.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.ControlledCircuit.adjoint">
+<code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ControlledCircuit.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ControlledCircuit.adjoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
+<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.ControlledCircuit.is_valid">
+<em class="property">property </em><code class="sig-name descname">is_valid</code><a class="headerlink" href="#acqdp.circuit.circuit.ControlledCircuit.is_valid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the circuit is valid.</p>
+<p>See <a class="reference internal" href="#acqdp.circuit.circuit.Circuit.shape" title="acqdp.circuit.circuit.Circuit.shape"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Circuit.shape</span></code></a> for ways a circuit can be invalid.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="acqdp.circuit.circuit.Controlled">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">Controlled</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operation</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">conditioned_on</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Controlled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Controlled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a controlled version of the given operation.</p>
+<p>When the given operation is not applied, the identity gate is applied, which
+means the operation must have the same input and output qubits. The
+operation also needs to be pure in order for quantum control to be
+well-defined, which means it must be a unitary. However, it can be either
+an <a class="reference internal" href="#acqdp.circuit.circuit.ImmutableOperation" title="acqdp.circuit.circuit.ImmutableOperation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImmutableOperation</span></code></a> or a <a class="reference internal" href="#acqdp.circuit.circuit.Circuit" title="acqdp.circuit.circuit.Circuit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Circuit</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>operation</strong> (<a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation"><em>Operation</em></a>) – The quantum operation being controlled.</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the resulting controlled operation. Defaults to
+“C-&lt;operation&gt;”, where &lt;operation&gt; is the operation being controlled.</p></li>
+<li><p><strong>conditioned_on</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether the operation is applied when the controlling
+qubit is in the <span class="math notranslate nohighlight">\(|1\rangle\)</span> state or the <span class="math notranslate nohighlight">\(|0\rangle\)</span>
+state. Defaults to True, meaning that the operation is applied when the
+controlling qubit is in the <span class="math notranslate nohighlight">\(|1\rangle\)</span> state.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="acqdp.circuit.circuit.SuperPosition">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">SuperPosition</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operations</span></em>, <em class="sig-param"><span class="n">coefs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'SuperPos'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#SuperPosition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.SuperPosition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.Operation</span></code></a></p>
+<p>Class for a superposition of multiple pure operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>operations</strong> (<em>List</em><em>[</em><a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation"><em>Operation</em></a><em>]</em>) – A list of operations in the superposition.</p></li>
+<li><p><strong>coefs</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a><em>]</em><em>, </em><em>optional</em>) – A list of coefficients, corresponding to each of the component
+operations. By default, all the coefficients are 1.</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the superposition operation. Defaults to “SuperPos”.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.SuperPosition.is_pure">
+<em class="property">property </em><code class="sig-name descname">is_pure</code><a class="headerlink" href="#acqdp.circuit.circuit.SuperPosition.is_pure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the operation is a pure operation.</p>
+<p>A <a class="reference internal" href="#acqdp.circuit.circuit.SuperPosition" title="acqdp.circuit.circuit.SuperPosition"><code class="xref py py-class docutils literal notranslate"><span class="pre">SuperPosition</span></code></a> object is always pure.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.circuit.SuperPosition.adjoint">
+<code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#SuperPosition.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.SuperPosition.adjoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
+<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="acqdp.circuit.circuit.XXRotation">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">XXRotation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">angle</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#XXRotation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.XXRotation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a two-qubit XX rotation gate in the form of
+<span class="math notranslate nohighlight">\(e^{i\theta(X\otimes X)}\)</span>, also known as an Ising gate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>angle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – The rotation angle <span class="math notranslate nohighlight">\(\theta\)</span>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="acqdp.circuit.circuit.ZZRotation">
+<code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">ZZRotation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">angle</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ZZRotation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ZZRotation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a two-qubit ZZ rotation gate in the form of
+<span class="math notranslate nohighlight">\(e^{i\theta(Z\otimes Z)}\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>angle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – The rotation angle <span class="math notranslate nohighlight">\(\theta\)</span>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-acqdp.circuit.converter">
+<span id="acqdp-circuit-converter-module"></span><h2>acqdp.circuit.converter module<a class="headerlink" href="#module-acqdp.circuit.converter" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="acqdp.circuit.converter.Converter">
+<em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.converter.</code><code class="sig-name descname">Converter</code><a class="reference internal" href="_modules/acqdp/circuit/converter.html#Converter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.converter.Converter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Generic converter class, with method mapping a circuit to
+a tensor network.</p>
+<dl class="py method">
+<dt id="acqdp.circuit.converter.Converter.convert_pure">
+<em class="property">classmethod </em><code class="sig-name descname">convert_pure</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operation</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation">acqdp.circuit.circuit.Operation</a></span></em><span class="sig-paren">)</span> &#x2192; acqdp.tensor_network.tensor_valued.TensorValued<a class="reference internal" href="_modules/acqdp/circuit/converter.html#Converter.convert_pure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.converter.Converter.convert_pure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do a pure conversion for noiseless circuit described as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code> object to a tensor network as a <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorValued</span></code> object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>operation</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code>.) – the noisy circuit to convert.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TensorValued</span></code> – the tensor network to describe the input noisy circuit.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.converter.Converter.convert_control">
+<em class="property">classmethod </em><code class="sig-name descname">convert_control</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operation</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#acqdp.circuit.circuit.PureOperation" title="acqdp.circuit.circuit.PureOperation">acqdp.circuit.circuit.PureOperation</a></span></em><span class="sig-paren">)</span> &#x2192; acqdp.tensor_network.tensor_valued.TensorValued<a class="reference internal" href="_modules/acqdp/circuit/converter.html#Converter.convert_control"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.converter.Converter.convert_control" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do a control conversion for noisy circuit described as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code> object to a tensor network as a <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorValued</span></code> object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>operation</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code>.) – the noisy circuit to convert.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TensorValued</span></code> – the tensor network to describe the input noisy circuit.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="acqdp.circuit.converter.Converter.convert_density">
+<em class="property">classmethod </em><code class="sig-name descname">convert_density</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operation</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation">acqdp.circuit.circuit.Operation</a></span></em><span class="sig-paren">)</span> &#x2192; acqdp.tensor_network.tensor_valued.TensorValued<a class="reference internal" href="_modules/acqdp/circuit/converter.html#Converter.convert_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.converter.Converter.convert_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do a density conversion for noisy circuit described as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code> object to a tensor network as a <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorValued</span></code> object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>operation</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code>.) – the noisy circuit to convert.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TensorValued</span></code> – the tensor network to describe the input noisy circuit.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-acqdp.circuit.noise">
+<span id="acqdp-circuit-noise-module"></span><h2>acqdp.circuit.noise module<a class="headerlink" href="#module-acqdp.circuit.noise" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="acqdp.circuit.noise.Depolarization">
+<code class="sig-prename descclassname">acqdp.circuit.noise.</code><code class="sig-name descname">Depolarization</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">px</span><span class="o">=</span><span class="default_value">0.25</span></em>, <em class="sig-param"><span class="n">py</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">pz</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/noise.html#Depolarization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.noise.Depolarization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit depolarizing channel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>px</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>.) – One of the three parameters to describe the single-qubit depolarizing channel.</p></li>
+<li><p><strong>py</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>.) – One of the three parameters to describe the single-qubit depolarizing channel.</p></li>
+<li><p><strong>pz</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>.) – One of the three parameters to describe the single-qubit depolarizing channel.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mixture</span></code> – the single-qubit depolarizing channel.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="acqdp.circuit.noise.Dephasing">
+<code class="sig-prename descclassname">acqdp.circuit.noise.</code><code class="sig-name descname">Dephasing</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pz</span><span class="o">=</span><span class="default_value">0.5</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/noise.html#Dephasing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.noise.Dephasing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Single-qubit dephasing channel, also called the phase-damping channel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pz</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>.) – The parameter to describe the single-qubit dephasing channel.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mixture</span></code> – the single-qubit dephasing channel with given parameter.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="acqdp.circuit.noise.AmplitudeDampling">
+<code class="sig-prename descclassname">acqdp.circuit.noise.</code><code class="sig-name descname">AmplitudeDampling</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">p</span><span class="o">=</span><span class="default_value">0.1</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/noise.html#AmplitudeDampling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.noise.AmplitudeDampling" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="acqdp.circuit.noise.add_noise">
+<code class="sig-prename descclassname">acqdp.circuit.noise.</code><code class="sig-name descname">add_noise</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">circuit</span></em>, <em class="sig-param"><span class="n">noise_channel</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/noise.html#add_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.noise.add_noise" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-acqdp.circuit">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-acqdp.circuit" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">acqdp.circuit package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-acqdp.circuit.circuit">acqdp.circuit.circuit module</a></li>
+<li><a class="reference internal" href="#module-acqdp.circuit.converter">acqdp.circuit.converter module</a></li>
+<li><a class="reference internal" href="#module-acqdp.circuit.noise">acqdp.circuit.noise module</a></li>
+<li><a class="reference internal" href="#module-acqdp.circuit">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tensor_network.html"
+                        title="previous chapter">Tensor network and its contractions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="qaoa.html"
+                        title="next chapter">Demo: The Quantum Approximate Optimization Algorithm (QAOA)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/acqdp.circuit.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="qaoa.html" title="Demo: The Quantum Approximate Optimization Algorithm (QAOA)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tensor_network.html" title="Tensor network and its contractions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">acqdp.circuit package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Alibaba Quantum Laboratory.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

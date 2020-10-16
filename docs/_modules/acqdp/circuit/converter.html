@@ -1,0 +1,287 @@
+
+
+<!doctype html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>acqdp.circuit.converter &#8212; Alibaba Cloud Quantum Development Platform 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/bizstyle.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">acqdp.circuit.converter</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for acqdp.circuit.converter</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">.circuit</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Operation</span><span class="p">,</span>
+                              <span class="n">ImmutableOperation</span><span class="p">,</span>
+                              <span class="n">PureOperation</span><span class="p">,</span>
+                              <span class="n">Circuit</span><span class="p">,</span>
+                              <span class="n">ControlledOperation</span><span class="p">,</span>
+                              <span class="n">Controlled</span><span class="p">,</span>
+                              <span class="n">ControlledCircuit</span><span class="p">,</span>
+                              <span class="n">CompState</span><span class="p">,</span>
+                              <span class="n">CompMeas</span><span class="p">,</span>
+                              <span class="n">SuperPosition</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">acqdp.tensor_network.tensor_valued</span> <span class="kn">import</span> <span class="n">TensorValued</span>
+
+<span class="kn">from</span> <span class="nn">acqdp.tensor_network.tensor_sum</span> <span class="kn">import</span> <span class="n">TensorSum</span>
+
+<span class="kn">from</span> <span class="nn">acqdp.tensor_network.tensor_network</span> <span class="kn">import</span> <span class="n">TensorNetwork</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="Converter"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.converter.Converter">[docs]</a><span class="k">class</span> <span class="nc">Converter</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generic converter class, with method mapping a circuit to</span>
+<span class="sd">    a tensor network.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Converter.convert_pure"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.converter.Converter.convert_pure">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">convert_pure</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">operation</span><span class="p">:</span> <span class="n">Operation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorValued</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Do a pure conversion for noiseless circuit described as a :class:`Operation` object to a tensor network as a :class:`TensorValued` object.</span>
+
+<span class="sd">        :param operation: the noisy circuit to convert.</span>
+<span class="sd">        :type operation: :class:`Operation`.</span>
+<span class="sd">        :returns:  :class:`TensorValued` -- the tensor network to describe the input noisy circuit.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">operation</span><span class="o">.</span><span class="n">is_pure</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: trying to do pure conversion for noisy circuit&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">ControlledCircuit</span><span class="p">):</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">circuit</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">Circuit</span><span class="p">()</span>
+            <span class="n">qubits</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">all_qubits</span>
+            <span class="k">for</span> <span class="n">gate</span> <span class="ow">in</span> <span class="n">op</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Controlled</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">gate</span><span class="p">][</span><span class="s2">&quot;operation&quot;</span><span class="p">],</span>
+                                    <span class="n">conditioned_on</span><span class="o">=</span><span class="n">operation</span><span class="o">.</span><span class="n">conditioned_on</span><span class="p">),</span>
+                         <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">qubits</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">op</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">gate</span><span class="p">][</span><span class="s1">&#39;qubits&#39;</span><span class="p">]])</span>
+            <span class="k">return</span> <span class="n">c</span><span class="o">.</span><span class="n">tensor_pure</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">ControlledOperation</span><span class="p">):</span>
+            <span class="n">tn</span> <span class="o">=</span> <span class="n">TensorNetwork</span><span class="p">()</span>
+            <span class="n">tn</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">&quot;TC&quot;</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">operation</span><span class="o">.</span><span class="n">_tensor_control</span><span class="p">)</span>
+            <span class="n">out_edges</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">in_edges</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">lst_ctrl</span><span class="p">,</span> <span class="n">len_ctrl</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;^c$&quot;</span><span class="p">)</span>
+            <span class="n">lst_out</span><span class="p">,</span> <span class="n">len_out</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;.*o$&quot;</span><span class="p">)</span>
+            <span class="n">lst_in</span><span class="p">,</span> <span class="n">len_in</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;^i&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">operation</span><span class="o">.</span><span class="n">_output_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">lst_ctrl</span><span class="p">:</span>
+                    <span class="n">out_edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lst_ctrl</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">out_edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">len_ctrl</span> <span class="o">+</span> <span class="n">lst_out</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">operation</span><span class="o">.</span><span class="n">_input_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">lst_ctrl</span><span class="p">:</span>
+                    <span class="n">in_edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lst_ctrl</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">in_edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">len_ctrl</span> <span class="o">+</span> <span class="n">len_out</span> <span class="o">+</span> <span class="n">lst_in</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="n">tn</span><span class="o">.</span><span class="n">open_edges</span> <span class="o">=</span> <span class="n">out_edges</span> <span class="o">+</span> <span class="n">in_edges</span>
+            <span class="k">return</span> <span class="n">tn</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">PureOperation</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">operation</span><span class="o">.</span><span class="n">_tensor_pure</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">SuperPosition</span><span class="p">):</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">TensorSum</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">coefs</span><span class="p">)):</span>
+                <span class="n">ts</span><span class="o">.</span><span class="n">add_term</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">operation</span><span class="o">.</span><span class="n">coefs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">operation</span><span class="o">.</span><span class="n">operations</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">tensor_pure</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ts</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">Circuit</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: operation is not yet supported&quot;</span><span class="p">)</span>
+            <span class="c1"># This cannot happen normally because Circuit.is_pure checks</span>
+            <span class="c1"># Circuit.is_valid, but is left in just in case someone subclasses</span>
+            <span class="c1"># Circuit and overrides is_pure.</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">operation</span><span class="o">.</span><span class="n">is_valid</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: trying to convert an invalid circuit into a tensor network&quot;</span><span class="p">)</span>
+            <span class="n">dic</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">dic_in</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">dic_out</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">tn</span> <span class="o">=</span> <span class="n">TensorNetwork</span><span class="p">()</span>
+            <span class="n">all_edges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">operations_by_time</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">gate</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">operations_by_time</span><span class="p">[</span><span class="n">time_step</span><span class="p">]):</span>
+                    <span class="n">op</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">gate</span><span class="p">][</span><span class="s1">&#39;operation&#39;</span><span class="p">]</span>
+                    <span class="n">qubits</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">gate</span><span class="p">][</span><span class="s1">&#39;qubits&#39;</span><span class="p">]</span>
+                    <span class="n">out_edges</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">in_edges</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">op</span><span class="o">.</span><span class="n">_output_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                        <span class="n">q</span> <span class="o">=</span> <span class="n">qubits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">q</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dic</span><span class="p">:</span>
+                            <span class="n">dic_out</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_step</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+                            <span class="n">out_edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dic_out</span><span class="p">[</span><span class="n">q</span><span class="p">])</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">edge</span> <span class="o">=</span> <span class="n">dic</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+                            <span class="n">out_edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+                            <span class="n">dic_in</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">op</span><span class="o">.</span><span class="n">_input_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                        <span class="n">q</span> <span class="o">=</span> <span class="n">qubits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="n">dic</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_step</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+                        <span class="n">in_edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dic</span><span class="p">[</span><span class="n">q</span><span class="p">])</span>
+                        <span class="n">dic_in</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="n">dic</span><span class="p">[</span><span class="n">q</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">out_edges</span> <span class="o">+</span> <span class="n">in_edges</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">edge</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_edges</span><span class="p">:</span>
+                            <span class="n">tn</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">bond_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                            <span class="n">all_edges</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">CompState</span><span class="p">:</span>
+                        <span class="n">tn</span><span class="o">.</span><span class="n">fix_edge</span><span class="p">(</span><span class="n">out_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">CompState</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">op</span><span class="p">))</span>
+                    <span class="k">elif</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">CompMeas</span><span class="p">:</span>
+                        <span class="n">tn</span><span class="o">.</span><span class="n">fix_edge</span><span class="p">(</span><span class="n">in_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">CompMeas</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">op</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">tn</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">gate</span><span class="p">,</span> <span class="n">out_edges</span> <span class="o">+</span> <span class="n">in_edges</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">tensor_pure</span><span class="p">)</span>
+            <span class="n">tn</span><span class="o">.</span><span class="n">open_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">dic_out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dic_out</span><span class="p">)]</span> <span class="o">+</span>\
+                            <span class="p">[</span><span class="n">dic_in</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dic_in</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="n">tn</span></div>
+
+<div class="viewcode-block" id="Converter.convert_control"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.converter.Converter.convert_control">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">convert_control</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">operation</span><span class="p">:</span> <span class="n">PureOperation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorValued</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Do a control conversion for noisy circuit described as a :class:`Operation` object to a tensor network as a :class:`TensorValued` object.</span>
+
+<span class="sd">        :param operation: the noisy circuit to convert.</span>
+<span class="sd">        :type operation: :class:`Operation`.</span>
+<span class="sd">        :returns:  :class:`TensorValued` -- the tensor network to describe the input noisy circuit.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">operation</span><span class="o">.</span><span class="n">is_pure</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Noisy operation does not have pure block-diagonal form&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">ControlledOperation</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">operation</span><span class="o">.</span><span class="n">_tensor_control</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">operation</span><span class="o">.</span><span class="n">tensor_pure</span></div>
+
+<div class="viewcode-block" id="Converter.convert_density"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.converter.Converter.convert_density">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">convert_density</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">operation</span><span class="p">:</span> <span class="n">Operation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorValued</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Do a density conversion for noisy circuit described as a :class:`Operation` object to a tensor network as a :class:`TensorValued` object.</span>
+
+<span class="sd">        :param operation: the noisy circuit to convert.</span>
+<span class="sd">        :type operation: :class:`Operation`.</span>
+<span class="sd">        :returns:  :class:`TensorValued` -- the tensor network to describe the input noisy circuit.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">PureOperation</span><span class="p">):</span>
+            <span class="n">tp</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">tensor_pure</span>
+            <span class="n">tn</span> <span class="o">=</span> <span class="n">TensorNetwork</span><span class="p">()</span>
+            <span class="n">len_tensor</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">tn</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">&quot;TP&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">len_tensor</span><span class="p">)),</span> <span class="n">tp</span><span class="p">)</span>
+            <span class="n">tn</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">&quot;~TP&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">len_tensor</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">len_tensor</span><span class="p">)),</span> <span class="p">(</span><span class="o">~</span><span class="n">tp</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">())</span>
+            <span class="n">tn</span><span class="o">.</span><span class="n">open_edges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">len_tensor</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">tn</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">ImmutableOperation</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">operation</span><span class="o">.</span><span class="n">_tensor_density</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">Circuit</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: operation is not yet supported&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">operation</span><span class="o">.</span><span class="n">is_valid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid operation&#39;</span><span class="p">)</span>
+            <span class="n">dic</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">tn</span> <span class="o">=</span> <span class="n">TensorNetwork</span><span class="p">()</span>
+            <span class="n">dic_out</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">dic_in</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">operations_by_time</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">gate</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">operations_by_time</span><span class="p">[</span><span class="n">time_step</span><span class="p">]):</span>
+                    <span class="n">op</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">gate</span><span class="p">][</span><span class="s2">&quot;operation&quot;</span><span class="p">]</span>
+                    <span class="n">qubits</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">gate</span><span class="p">][</span><span class="s1">&#39;qubits&#39;</span><span class="p">]</span>
+                    <span class="n">out_edges_p</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">in_edges_p</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">out_edges_d</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">in_edges_d</span> <span class="o">=</span> <span class="p">[]</span>
+
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">op</span><span class="o">.</span><span class="n">_input_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                        <span class="n">q</span> <span class="o">=</span> <span class="n">qubits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">q</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dic</span><span class="p">:</span>
+                            <span class="n">in_edges_p</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">time_step</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">))</span>
+                            <span class="n">in_edges_d</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">time_step</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">))</span>
+                            <span class="n">dic_in</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">time_step</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">q</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">edge</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dic</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">q</span><span class="p">))</span>
+                            <span class="n">in_edges_p</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">edge</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;p&#39;</span><span class="p">]))</span>
+                            <span class="n">in_edges_d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">edge</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;d&#39;</span><span class="p">]))</span>
+                            <span class="n">dic_out</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">op</span><span class="o">.</span><span class="n">_output_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                        <span class="n">q</span> <span class="o">=</span> <span class="n">qubits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="n">dic</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+                        <span class="n">out_edges_p</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">time_step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">))</span>
+                        <span class="n">out_edges_d</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">time_step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">))</span>
+                        <span class="n">dic_out</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">time_step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">q</span><span class="p">]</span>
+                    <span class="n">tn</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">gate</span><span class="p">,</span> <span class="n">out_edges_p</span> <span class="o">+</span> <span class="n">in_edges_p</span> <span class="o">+</span> <span class="n">out_edges_d</span> <span class="o">+</span> <span class="n">in_edges_d</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">tensor_density</span><span class="p">)</span>
+            <span class="n">tn</span><span class="o">.</span><span class="n">open_edges</span> <span class="o">=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">dic_out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;p&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dic_out</span><span class="p">)]</span> <span class="o">+</span>\
+                            <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">dic_in</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;p&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dic_in</span><span class="p">)]</span> <span class="o">+</span>\
+                            <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">dic_out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;d&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dic_out</span><span class="p">)]</span> <span class="o">+</span>\
+                            <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">dic_in</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;d&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dic_in</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="n">tn</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">acqdp.circuit.converter</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Alibaba Quantum Laboratory.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,334 @@
+
+
+<!doctype html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>acqdp.tensor_network.compiler &#8212; Alibaba Cloud Quantum Development Platform 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/bizstyle.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">acqdp.tensor_network.compiler</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for acqdp.tensor_network.compiler</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">opt_einsum</span>
+<span class="kn">from</span> <span class="nn">acqdp.tensor_network</span> <span class="kn">import</span> <span class="n">ContractionTask</span><span class="p">,</span> <span class="n">defaultOrderResolver</span><span class="p">,</span> <span class="n">ContractionCost</span>
+
+
+<div class="viewcode-block" id="Compiler"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.Compiler">[docs]</a><span class="k">class</span> <span class="nc">Compiler</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compile a :class:`ContractionScheme` indicating contraction scheme and sliced edges into a :class:`ContractionTask`, a hardware-aware format that can be readily used for tensor network contraction.</span>
+
+<span class="sd">    Typically, a :class:`ContractionScheme` found by one of the :class:`OrderFinder` only aims to minimize the theoretical floating number operations and / or largest size of intermediate tensors.</span>
+<span class="sd">    Although those are typically accurate indicators of the overall contracion cost, they fail to accomodate inefficiencies from elsewhere.</span>
+<span class="sd">    The compiler takes care of machine-related inefficiencies by slightly modifying the order.</span>
+
+<span class="sd">    :ivar do_patch: If set to false, the patching and reorganization of the contraction order below will be skipped.</span>
+<span class="sd">    :ivar patch_size: Whenever two adjacent branches both have size less than the patch size, the branches are merged together. This is to avoid inefficiency called by skewed tensor shapes in tensor multiplication, with a slight sacrifice in floating number operations.</span>
+<span class="sd">    :ivar reorg_thres: Threshold for contraction order reorganization. The order is seperated into small tensor multiplications and large tensor multiplications. All pairwise tensor multiplications involving tensors with size less than `reorg_thres` will be put forward whenever possible.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">reorg_thres</span><span class="o">=</span><span class="mi">23</span><span class="p">,</span>
+                 <span class="n">patch_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                 <span class="n">do_patch</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reorg_thres</span> <span class="o">=</span> <span class="n">reorg_thres</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span> <span class="o">=</span> <span class="n">patch_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">do_patch</span> <span class="o">=</span> <span class="n">do_patch</span>
+
+<div class="viewcode-block" id="Compiler.compile"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.Compiler.compile">[docs]</a>    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">scheme</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param tn: The :class:`TensorNetwork` the input contraction scheme is based on.</span>
+<span class="sd">        :type tn: :class:`TensorNetwork`</span>
+<span class="sd">        :param scheme: The contraction scheme from which the task is generated.</span>
+<span class="sd">        :type scheme: :class:`ContractionScheme`</span>
+
+<span class="sd">        :returns: :class:`ContractionTask` -- The compiled contraction task ready for execution.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tn</span> <span class="o">=</span> <span class="n">tn</span><span class="o">.</span><span class="n">_expand_and_delta</span><span class="p">()</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_template</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="n">scheme</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">set_data</span><span class="p">({</span>
+            <span class="n">node</span><span class="p">:</span> <span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">node</span><span class="p">)][</span><span class="s1">&#39;tensor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">contract</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tn</span><span class="o">.</span><span class="n">nodes_by_name</span>
+        <span class="p">})</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">update_fix</span><span class="p">(</span><span class="n">tn</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+    <span class="k">def</span> <span class="nf">_generate_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">scheme</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tn</span><span class="o">.</span><span class="n">nodes</span><span class="p">}</span>
+        <span class="n">data_ref</span> <span class="o">=</span> <span class="p">{(</span><span class="mi">0</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span> <span class="n">inputs</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">}</span>
+        <span class="n">order</span><span class="p">,</span> <span class="n">split</span> <span class="o">=</span> <span class="n">scheme</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="n">scheme</span><span class="o">.</span><span class="n">slices</span>
+        <span class="n">split</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">split</span><span class="p">]</span>
+        <span class="n">tn_copy</span> <span class="o">=</span> <span class="n">tn</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">tn_copy</span><span class="o">.</span><span class="n">open_edges</span> <span class="o">+=</span> <span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">split</span><span class="p">]</span>
+        <span class="n">tn_copy</span><span class="o">.</span><span class="n">fix</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">edge_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">tn_copy</span><span class="o">.</span><span class="n">edges_by_name</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tn_copy</span><span class="o">.</span><span class="n">network</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="n">edge_name</span><span class="p">)])</span>
+                    <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">edge_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">open_edges</span><span class="p">:</span>
+                <span class="n">tn_copy</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">remove_node</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">edge_name</span><span class="p">))</span>
+        <span class="n">init_order</span><span class="p">,</span> <span class="n">final_order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_order_patch</span><span class="p">(</span><span class="n">tn_copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">order</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span>
+                                                   <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_template_fix</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="p">[],</span> <span class="n">data_ref</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">ContractionTask</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">k</span>
+        <span class="n">lst</span><span class="p">,</span> <span class="n">fix_dict</span> <span class="o">=</span> <span class="n">k</span>
+
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">init_order</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">stn_name</span><span class="p">,</span> <span class="n">stn</span> <span class="o">=</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">encapsulate</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stn_name</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">lst</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_template_basic</span><span class="p">(</span><span class="n">stn</span><span class="p">,</span> <span class="n">data_ref</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">stn_name</span><span class="p">))</span>
+
+        <span class="n">cnt</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span>
+
+        <span class="n">fix_lst</span><span class="p">,</span> <span class="n">fix_dict_new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_template_fix</span><span class="p">(</span>
+            <span class="n">tn_copy</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">data_ref</span><span class="p">)</span>
+        <span class="n">lst</span> <span class="o">+=</span> <span class="n">fix_lst</span>
+        <span class="n">fix_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fix_dict_new</span><span class="p">)</span>
+
+        <span class="n">tn_copy</span><span class="o">.</span><span class="n">open_edges</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">open_edges</span> <span class="k">if</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">split</span>
+            <span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">split</span><span class="p">:</span>
+            <span class="n">tn_copy</span><span class="o">.</span><span class="n">fix_edge</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">tn_copy</span><span class="o">.</span><span class="n">fix</span><span class="p">()</span>
+
+        <span class="n">lst</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_template_basic</span><span class="p">(</span><span class="n">tn_copy</span><span class="p">,</span> <span class="n">data_ref</span><span class="p">,</span> <span class="s1">&#39;#&#39;</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">shapes</span> <span class="o">=</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">subscripts</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_order</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">lst_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">final_order</span><span class="p">:</span>
+                <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">lst_nodes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">lst_nodes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])))</span>
+                <span class="n">lst_nodes</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">lst_nodes</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">lst_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">expr</span> <span class="o">=</span> <span class="n">opt_einsum</span><span class="o">.</span><span class="n">contract_expression</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">][</span><span class="s1">&#39;subscripts&#39;</span><span class="p">],</span>
+                                                  <span class="o">*</span><span class="n">shapes</span><span class="p">,</span>
+                                                  <span class="n">optimize</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">lst</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">][</span><span class="s1">&#39;expr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expr</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">ContractionTask</span><span class="p">(</span><span class="n">commands</span><span class="o">=</span><span class="n">lst</span><span class="p">,</span>
+                               <span class="n">fix_dict</span><span class="o">=</span><span class="n">fix_dict</span><span class="p">,</span>
+                               <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span>
+                               <span class="n">output</span><span class="o">=</span><span class="n">data_ref</span><span class="p">[</span><span class="s1">&#39;#&#39;</span><span class="p">],</span>
+                               <span class="n">shape</span><span class="o">=</span><span class="n">tn</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                               <span class="n">open_edges</span><span class="o">=</span><span class="n">tn</span><span class="o">.</span><span class="n">open_edges</span><span class="p">,</span>
+                               <span class="n">sub_outputs</span><span class="o">=</span><span class="n">tn_copy</span><span class="o">.</span><span class="n">open_edges</span><span class="p">,</span>
+                               <span class="n">cnt</span><span class="o">=</span><span class="n">cnt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="k">def</span> <span class="nf">_generate_template_fix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">data_ref</span><span class="p">):</span>
+        <span class="n">lst</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">fix_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_template_edge_fix</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="n">split</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fix_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">fix_dict</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tn</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="n">fix_idx</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">fix_to</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">edge</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s1">&#39;edges&#39;</span><span class="p">]):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">edge</span><span class="p">)</span> <span class="ow">in</span> <span class="n">fix_dict</span><span class="p">:</span>
+                    <span class="n">fix_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="n">fix_to</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fix_dict</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="n">edge</span><span class="p">)][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fix_idx</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">new_res</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+                <span class="n">lst</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">data_ref</span><span class="p">[</span><span class="n">node</span><span class="p">],</span> <span class="n">new_res</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;fix_idx&#39;</span><span class="p">:</span> <span class="n">fix_idx</span><span class="p">,</span> <span class="s1">&#39;fix_to&#39;</span><span class="p">:</span> <span class="n">fix_to</span><span class="p">}))</span>
+                <span class="n">data_ref</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_res</span>
+        <span class="n">res_dict</span> <span class="o">=</span> <span class="p">{(</span><span class="n">k</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">fix_dict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">0</span><span class="p">])):</span> <span class="n">fix_dict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fix_dict</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">lst</span><span class="p">,</span> <span class="n">res_dict</span>
+
+    <span class="k">def</span> <span class="nf">_generate_template_edge_fix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">split</span><span class="p">):</span>
+        <span class="n">fix_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">tn</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">split</span><span class="p">:</span>
+                <span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s1">&#39;fix_to&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s1">&#39;dim&#39;</span><span class="p">]))</span>
+                <span class="n">fix_dict</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s1">&#39;dim&#39;</span><span class="p">])),</span> <span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="s1">&#39;fix_to&#39;</span> <span class="ow">in</span> <span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">]:</span>
+                <span class="n">ll</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s1">&#39;fix_to&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">ll</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">ContractionTask</span><span class="p">(</span><span class="n">output</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">shape</span><span class="p">))])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">fix_dict</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s1">&#39;fix_to&#39;</span><span class="p">]),</span> <span class="nb">list</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s1">&#39;fix_to&#39;</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">fix_dict</span>
+
+    <span class="k">def</span> <span class="nf">_generate_template_delta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">data_ref</span><span class="p">):</span>
+        <span class="n">open_edge_names</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="n">tn</span><span class="o">.</span><span class="n">edges_by_name_from_nodes_by_name</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">id_node</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+            <span class="n">tn</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="p">[],</span> <span class="n">id_node</span><span class="p">)</span>
+            <span class="n">data_ref</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;*&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">id_node</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">edge</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">open_edges</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">edge</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">open_edge_names</span><span class="p">:</span>
+                <span class="n">open_edge_names</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">edge</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">open_edge_names</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">new_node</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="n">edge</span><span class="p">)][</span><span class="s1">&#39;dim&#39;</span><span class="p">])</span>
+                <span class="n">data_ref</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">edge</span><span class="p">,</span> <span class="n">open_edge_names</span><span class="p">[</span><span class="n">edge</span><span class="p">]))]</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">new_node</span><span class="p">)]</span>
+                <span class="n">tn</span><span class="o">.</span><span class="n">add_node</span><span class="p">((</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">edge</span><span class="p">,</span> <span class="n">open_edge_names</span><span class="p">[</span><span class="n">edge</span><span class="p">]),</span> <span class="p">[</span><span class="n">edge</span><span class="p">,</span> <span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">open_edge_names</span><span class="p">[</span><span class="n">edge</span><span class="p">])],</span> <span class="n">new_node</span><span class="p">)</span>
+                <span class="n">tn</span><span class="o">.</span><span class="n">open_edges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">open_edge_names</span><span class="p">[</span><span class="n">edge</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">open_edge_names</span><span class="p">:</span>
+            <span class="n">diag</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">edge</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edges</span> <span class="ow">and</span> <span class="n">open_edge_names</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">diag</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.</span><span class="p">]</span> <span class="o">*</span> <span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="n">edge</span><span class="p">)][</span><span class="s1">&#39;dim&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;fix_to&#39;</span> <span class="ow">in</span> <span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="n">edge</span><span class="p">)]:</span>
+                <span class="n">diag</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="n">edge</span><span class="p">)][</span><span class="s1">&#39;fix_to&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="n">edge</span><span class="p">)][</span><span class="s1">&#39;dim&#39;</span><span class="p">])]</span>
+                <span class="n">tn</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="n">edge</span><span class="p">)]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;fix_to&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">diag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">new_node</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">diag</span><span class="p">)</span>
+                <span class="n">data_ref</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">edge</span><span class="p">,</span> <span class="mi">0</span><span class="p">))]</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">new_node</span><span class="p">)]</span>
+                <span class="n">tn</span><span class="o">.</span><span class="n">add_node</span><span class="p">((</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">edge</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">[</span><span class="n">edge</span><span class="p">],</span> <span class="n">new_node</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_generate_template_basic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">data_ref</span><span class="p">,</span> <span class="n">new_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">new_res</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+        <span class="n">data_ref</span><span class="p">[</span><span class="n">new_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_res</span>
+        <span class="k">if</span> <span class="n">new_name</span> <span class="o">==</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_generate_template_delta</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="n">data_ref</span><span class="p">)</span>
+        <span class="n">lhs</span> <span class="o">=</span> <span class="p">[</span><span class="n">data_ref</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tn</span><span class="o">.</span><span class="n">nodes</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="p">[(</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">new_res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_template_einsum</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="n">subscripts</span><span class="o">=</span><span class="n">tn</span><span class="o">.</span><span class="n">subscripts</span><span class="p">(),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tn</span><span class="o">.</span><span class="n">nodes</span><span class="p">])]</span>
+
+    <span class="k">def</span> <span class="nf">_generate_template_einsum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">subscripts</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">lhs_str</span><span class="p">,</span> <span class="n">rhs_str</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">subscripts</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lhs_str</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-&gt;&#39;</span> <span class="o">+</span> <span class="n">rhs_str</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;subscripts&#39;</span><span class="p">:</span> <span class="n">command</span><span class="p">,</span>  <span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="n">tn</span><span class="o">.</span><span class="n">dtype</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_order_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">split_edges</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_patch</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">acqdp.tensor_network.contraction_tree</span> <span class="kn">import</span> <span class="n">ContractionTree</span>
+            <span class="n">tn_copy</span> <span class="o">=</span> <span class="n">tn</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">tn_copy</span><span class="o">.</span><span class="n">open_edges</span> <span class="o">+=</span> <span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">split_edges</span><span class="p">]</span>
+            <span class="n">tn_copy</span><span class="o">.</span><span class="n">fix</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">edge_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">tn_copy</span><span class="o">.</span><span class="n">edges_by_name</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tn_copy</span><span class="o">.</span><span class="n">network</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="n">edge_name</span><span class="p">)])</span>
+                        <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">edge_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">open_edges</span><span class="p">:</span>
+                    <span class="n">tn_copy</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">remove_node</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">edge_name</span><span class="p">))</span>
+            <span class="k">assert</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">tn</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="n">ContractionTree</span><span class="o">.</span><span class="n">from_order</span><span class="p">(</span><span class="n">tn_copy</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span><span class="o">.</span><span class="n">full_order</span>
+            <span class="n">init_order</span><span class="p">,</span> <span class="n">final_order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorg_order</span><span class="p">(</span><span class="n">tn_copy</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+            <span class="n">tn_copy</span><span class="o">.</span><span class="n">open_edges</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">open_edges</span> <span class="k">if</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">split_edges</span>
+            <span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">split_edges</span><span class="p">:</span>
+                <span class="n">tn_copy</span><span class="o">.</span><span class="n">fix_edge</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">tn_copy</span><span class="o">.</span><span class="n">fix</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_order</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">final_order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_patch_order</span><span class="p">(</span><span class="n">tn_copy</span><span class="p">,</span> <span class="n">final_order</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">init_order</span><span class="p">,</span> <span class="n">final_order</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[],</span> <span class="n">order</span>
+
+    <span class="k">def</span> <span class="nf">_reorg_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">fix</span><span class="p">()</span>
+        <span class="n">size_dic</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">subs</span><span class="p">,</span> <span class="n">order</span> <span class="o">=</span> <span class="n">defaultOrderResolver</span><span class="o">.</span><span class="n">order_to_subscripts_tree</span><span class="p">(</span>
+            <span class="n">graph</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">subs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">order</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">subs</span><span class="p">)</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">order</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">o</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+            <span class="n">size_dic</span><span class="p">[</span><span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">subs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">size_dic</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">subs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+        <span class="n">init_order</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">node_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">])</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">order</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">size_dic</span><span class="p">[</span><span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">reorg_thres</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">a</span> <span class="ow">in</span> <span class="n">node_set</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">]]):</span>
+                    <span class="n">init_order</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+                    <span class="n">order</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                        <span class="n">node_set</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+                    <span class="n">node_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">graph</span><span class="o">.</span><span class="n">encapsulate</span><span class="p">(</span><span class="n">nodes</span><span class="o">=</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stn_name</span><span class="o">=</span><span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="n">init_order</span><span class="p">,</span> <span class="n">order</span>
+
+    <span class="k">def</span> <span class="nf">_patch_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">acqdp.tensor_network.contraction_tree</span> <span class="kn">import</span> <span class="n">ContractionTree</span>
+        <span class="n">graph_copy</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">graph_copy</span><span class="o">.</span><span class="n">fix</span><span class="p">()</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">ContractionTree</span><span class="o">.</span><span class="n">from_order</span><span class="p">(</span><span class="n">graph_copy</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">acqdp.tensor_network.compiler</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Alibaba Quantum Laboratory.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

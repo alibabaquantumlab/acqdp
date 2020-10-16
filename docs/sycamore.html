@@ -1,0 +1,194 @@
+
+
+<!doctype html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demo: Simulating the Sycamore random quantum circuits &#8212; Alibaba Cloud Quantum Development Platform 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/bizstyle.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Demo: The Quantum Approximate Optimization Algorithm (QAOA)" href="qaoa.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="qaoa.html" title="Demo: The Quantum Approximate Optimization Algorithm (QAOA)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Demo: Simulating the Sycamore random quantum circuits</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="demo-simulating-the-sycamore-random-quantum-circuits">
+<h1>Demo: Simulating the Sycamore random quantum circuits<a class="headerlink" href="#demo-simulating-the-sycamore-random-quantum-circuits" title="Permalink to this headline">¶</a></h1>
+<p>The concept of quantum supremacy is first introduced by John Preskill in <a class="reference internal" href="#p12" id="id1"><span>[P12]</span></a>, indicating a milestone that a quantum computer can achieve a certain task that is infeasible for even the most powerful classical computational resource. Quantum supremacy does not immediately indicate the usefulness of quantum computers on solving classically intractable computational problems; it serves rather as an early demonstration that quantum computers can potentially outperform classical computers on specific tasks.</p>
+<p>After years of rapid development on quantum hardwares, Google claimed to have achieved quantum supremacy by sampling from a family of random circuits using their latest-generation superconducting quantum computer of 53 qubits, called the <cite>Sycamore</cite> quantum computer <a class="reference internal" href="#aab-19" id="id2"><span>[AAB+19]</span></a>. It is estimated that the quantum computer takes about 200 seconds to sample 1 million bitstrings with a certain quality, while a comparable task would take 10 millenia on the Summit supercomputer. Using the powerful order-finding scheme in the ACQDP, The recent work from Alibaba managed to pin this estimation down to less than 20 days <a class="reference internal" href="#hzn-20" id="id3"><span>[HZN+20]</span></a>. Although it is still far from the 200 seconds from the quantum hardware, this examples serves as a great example of the ACQDP being used for intermediate-sized tensor network contraction, where up to a few thousands of tensors are involved. The source code can be found at <cite>examples.GRCS</cite> and <cite>examples.circuit_simulation</cite>, and the contraction schemes previously found are available at the folder <cite>benchmarks</cite>.</p>
+<div class="section" id="an-easy-example-m-10">
+<h2>An easy example <span class="math notranslate nohighlight">\(m=10\)</span><a class="headerlink" href="#an-easy-example-m-10" title="Permalink to this headline">¶</a></h2>
+<p><cite>examples/GRCS.py</cite> provides a preliminary parser translating <cite>.qsim</cite> files for the Sycamore circuit instances to <cite>acqdp.circuit.Circuit</cite> and then to <cite>acqdp.tensor_network.TensorNetwork</cite>.</p>
+<p>To run the Sycamore circuit with 10 layers, run:</p>
+<div class="highlight-zsh notranslate"><div class="highlight"><pre><span></span>python -m examples.circuit_simulation benchmark/circuit_n53_m10_s0_e0_pABCDCDAB.qsim
+</pre></div>
+</div>
+<p>Without specifying an order, the program finds a contraction order by invoking the Kahypar hypergraph decomposition scheme. In one run of the script, the program outputs:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Process</span> <span class="mi">0</span> <span class="n">succeeded</span> <span class="k">with</span> <span class="n">cost</span> <span class="o">=</span> <span class="mf">10.62287901105588</span><span class="p">,</span> <span class="n">cw</span> <span class="o">=</span> <span class="mf">27.0</span><span class="p">,</span> <span class="n">num_split</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>Indicating a contraction order (without slicing) is found, where the number of floating point operations is <cite>10**10.62</cite> and the biggest intermediate tensor has <cite>2**27</cite> entries. No slicing was needed since the tensor sizes are well within the hardware limits of 16 Gigabytes. The program then proceeds with contraction. The total run time for 5 times the contraction on a single laptop reads:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Compute</span> <span class="n">Time</span>       <span class="o">---</span> <span class="mf">52.8843309879303</span> <span class="n">seconds</span> <span class="o">---</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="a-harder-example-m-20">
+<h2>A harder example: <span class="math notranslate nohighlight">\(m=20\)</span><a class="headerlink" href="#a-harder-example-m-20" title="Permalink to this headline">¶</a></h2>
+<p>The previous example demonstrates a full run of the ACQDP on a relatively small instance. It is to be noted that the <span class="math notranslate nohighlight">\(m=10\)</span> circuits are not the one used in <a class="reference internal" href="#aab-19" id="id4"><span>[AAB+19]</span></a> for the quantum supremacy experiment; instead, the full experiment ran the much deeper, <span class="math notranslate nohighlight">\(m=20\)</span> circuit. Not only simulating the <span class="math notranslate nohighlight">\(m=20\)</span> quantum circuit is difficult, it takes longer time to find a good contraction order together with index slicing to carry out the simulation efficiently.</p>
+<p>Here we choose to include the contraction schemes we found earlier. Note that all Sycamore quantum circuits with the same <span class="math notranslate nohighlight">\(m\)</span> have identical tensor network structure, and those contraction schemes can be reused for different instances of random circuits. The contraction schemes are stored in the <cite>benchmark</cite> folder.</p>
+<div class="highlight-zsh notranslate"><div class="highlight"><pre><span></span>python -m examples.circuit_simulation benchmark/circuit_n53_m20_s0_e0_pABCDCDAB.qsim -o benchmark/m20_1.json
+</pre></div>
+</div>
+<p>One get the estimated cost and number of subtasks:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cost</span> <span class="o">=</span> <span class="mf">19.124598309858378</span><span class="p">,</span> <span class="n">cw</span> <span class="o">=</span> <span class="mf">29.0</span><span class="p">,</span> <span class="n">num_slice</span> <span class="o">=</span> <span class="mi">25</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">subtasks</span> <span class="n">per</span> <span class="n">batch</span> <span class="o">---</span> <span class="mi">33554432</span> <span class="o">---</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="performance">
+<h2>Performance<a class="headerlink" href="#performance" title="Permalink to this headline">¶</a></h2>
+<p>In <a class="reference internal" href="#hzn-20" id="id5"><span>[HZN+20]</span></a> , we compared our theoretical number of floating point operations and projected experimental running time to the existing results:</p>
+<a class="reference internal image-reference" href="_images/benchmark.pdf"><img alt="Comparison of FLOPs / projected running time of the simulation tasks" src="_images/benchmark.pdf" style="width: 700px;" /></a>
+<p>Classical simulation cost and extrapolated running time of sampling from <span class="math notranslate nohighlight">\(m\)</span>-cycle random circuits with low XEB fidelities.  The dashed lines represent the theoretical number of floating point operations (FLOPs) and the solid lines represent extrapolated running times from the experiments. The two axes are aligned by the theoretical GPU efficiency of an Nvidia V100.Consequently, the dashed lines represent runtime lower bounds provided that GPU efficiency is fully saturated. Numerical data for ACQDP is reported in Table 1. The velvet line is reportedin <a class="reference internal" href="#aab-19" id="id6"><span>[AAB+19]</span></a> using the hybrid Schr&quot;odinger-Feynman algorithm, where the projected running time is estimated from a different architecture than Summit, and so the theretical FLOPs is not shown.</p>
+<div class="section" id="appendix">
+<h3>Appendix<a class="headerlink" href="#appendix" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="the-sycamore-quantum-circuit">
+<h2>The Sycamore quantum circuit<a class="headerlink" href="#the-sycamore-quantum-circuit" title="Permalink to this headline">¶</a></h2>
+<p>The quantum circuit ran on the Google Sycamore quantum device are drawn from a particular distribution of quantum circuits.</p>
+<a class="reference internal image-reference" href="_images/circuit.pdf"><img alt="Sycamore circuit" src="_images/circuit.pdf" style="width: 700px;" /></a>
+<p>The structure of the 53-qubit random quantum circuits is shown above. There are 53 qubits on the Sycamore quantum chip, with a pairwise connection graph as shown in (a). The random circuits consists of repetitions of alternations between fixed two-qubit gates followed by random one qubit gates. Lines of different colors in (a) represent two-qubit gates that appear in different layers. (b) shows a schematic diagram of an 8-cycle circuit. Each cycle includes a layer of random single-qubit gates (empty squares in the diagram) and a layer of two-qubit gates (labeled A, B, C, or D, and colored according to the two-qubit gates in (a)). For longer circuits, the layers repeat in the sequence A, B, C, D, C, D, A, B. Note that there is an extra layer of single-qubit gates preceding measurement.</p>
+</div>
+<div class="section" id="the-classical-simulation-algorithm">
+<h2>The classical simulation algorithm<a class="headerlink" href="#the-classical-simulation-algorithm" title="Permalink to this headline">¶</a></h2>
+<p>We adopt the tensor network contraction framework proposed in <a class="reference internal" href="#bis-18" id="id7"><span>[BIS+18]</span></a>, <a class="reference internal" href="#aab-19" id="id8"><span>[AAB+19]</span></a> as the basis for our simulation of random circuit sampling. This framework assumes that the outcome distribution of a random quantum circuit is a randomly permuted Porter-Thomas distribution. Under this assumption, we can perform <em>frugal rejection sampling</em> on bitstrings by computing the corresponding amplitudes <a class="reference internal" href="#mfi-18" id="id9"><span>[MFI+18]</span></a>. When the batch size of bitstrings is sufficiently large (chosen in our case to be 64), then with high probability, at least one outcome among the batch will be accepted. It can be estimated from <a class="reference internal" href="#mfi-18" id="id10"><span>[MFI+18]</span></a> that this framework achieves almost perfect sampling when the batch size is chosen to be 64. We can choose the batch to be a state vector on 6 qubits while randomly post-selecting the remaining 47 qubits. In this case, the aggregated result of the amplitudes can be expressed as an open tensor network. This translates the task of sampling from random quantum circuits to the task of contracting a tensor network. For random circuits with <span class="math notranslate nohighlight">\(m=12,14,20\)</span> cycles, we choose the qubits (0,1,2,3,4,5) in the upper-right corner, and for <span class="math notranslate nohighlight">\(m=16, 18\)</span> cycles, we choose the qubits (10,17,26,36,27,18) in the lower-right corner. These choices minimize the overhead introduced by simultaneously evaluating each batch of 64 amplitudes.</p>
+<div class="section" id="references">
+<h3>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h3>
+<dl class="citation">
+<dt class="label" id="p12"><span class="brackets"><a class="fn-backref" href="#id1">P12</a></span></dt>
+<dd><p>John Preskill, <em>Quantum computing and the entanglement frontier</em>, arXiv preprint arXiv:1203.5813, 2012.</p>
+</dd>
+<dt class="label" id="aab-19"><span class="brackets">AAB+19</span><span class="fn-backref">(<a href="#id2">1</a>,<a href="#id4">2</a>,<a href="#id6">3</a>,<a href="#id8">4</a>)</span></dt>
+<dd><p>Frank Arute et al, <em>Quantum supremacy using a programmable superconducting processor</em>, Nature, 574(7779):505– 510, 2019.</p>
+</dd>
+<dt class="label" id="hzn-20"><span class="brackets">HZN+20</span><span class="fn-backref">(<a href="#id3">1</a>,<a href="#id5">2</a>)</span></dt>
+<dd><p>Cupjin Huang, Fang Zhang, Michael Newman, Junjie Cai, Xun Gao, Zhengxiong Tian, Junyin Wu, Haihong Xu, Huanjun Yu, Bo Yuan, Mario Szegedy, Yaoyun Shi, and Jianxin Chen, <em>Classical Simulation of Quantum Supremacy Circuits</em>, arXiv preprint arXiv:2005.06787, 2020.</p>
+</dd>
+<dt class="label" id="mfi-18"><span class="brackets">MFI+18</span><span class="fn-backref">(<a href="#id9">1</a>,<a href="#id10">2</a>)</span></dt>
+<dd><p>Igor L Markov, Aneeqa Fatima, Sergei V Isakov, and Sergio Boixo.  <em>Quantum supremacy is both closer and farther than it appears</em>, arXiv preprint arXiv:1807.10749, 2018.</p>
+</dd>
+<dt class="label" id="bis-18"><span class="brackets"><a class="fn-backref" href="#id7">BIS+18</a></span></dt>
+<dd><p>Sergio Boixo, Sergei V Isakov, Vadim N Smelyanskiy, Ryan Babbush, Nan Ding, Zhang Jiang, Michael J Bremner, John M Martinis, and Hartmut Neven. <em>Characterizing quantum supremacy in near-term devices</em>. Nature Physics, 14(6):595–600, 2018.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Demo: Simulating the Sycamore random quantum circuits</a><ul>
+<li><a class="reference internal" href="#an-easy-example-m-10">An easy example <span class="math notranslate nohighlight">\(m=10\)</span></a></li>
+<li><a class="reference internal" href="#a-harder-example-m-20">A harder example: <span class="math notranslate nohighlight">\(m=20\)</span></a></li>
+<li><a class="reference internal" href="#performance">Performance</a><ul>
+<li><a class="reference internal" href="#appendix">Appendix</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-sycamore-quantum-circuit">The Sycamore quantum circuit</a></li>
+<li><a class="reference internal" href="#the-classical-simulation-algorithm">The classical simulation algorithm</a><ul>
+<li><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="qaoa.html"
+                        title="previous chapter">Demo: The Quantum Approximate Optimization Algorithm (QAOA)</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/sycamore.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="qaoa.html" title="Demo: The Quantum Approximate Optimization Algorithm (QAOA)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Demo: Simulating the Sycamore random quantum circuits</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Alibaba Quantum Laboratory.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1203 @@
+
+
+<!doctype html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>acqdp.circuit.circuit &#8212; Alibaba Cloud Quantum Development Platform 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/bizstyle.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">acqdp.circuit.circuit</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for acqdp.circuit.circuit</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="c1"># from .myabc import MN</span>
+<span class="kn">from</span> <span class="nn">acqdp.tensor_network.tensor_valued</span> <span class="kn">import</span> <span class="n">TensorValued</span>
+<span class="kn">from</span> <span class="nn">acqdp.tensor_network.tensor</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span> <span class="nn">acqdp.tensor_network.tensor_network</span> <span class="kn">import</span> <span class="n">TensorNetwork</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span>
+
+
+<span class="n">INDENT</span> <span class="o">=</span> <span class="s2">&quot;  &quot;</span>
+<span class="sd">&quot;&quot;&quot;The unit of indentation used for :meth:`Operation.tree_string`.&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="Operation"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Operation">[docs]</a><span class="k">class</span> <span class="nc">Operation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for quantum opertations.</span>
+
+<span class="sd">    By itself, it can represent a generic quantum operation, although one would</span>
+<span class="sd">    not be able to do much with it. Usually, one should use</span>
+<span class="sd">    :class:`ImmutableOperation` (or more commonly, one of its subclasses) for</span>
+<span class="sd">    simple quantum operations with an explicit tensor representation, and</span>
+<span class="sd">    :class:`Circuit` for quantum operations better represented as a composition</span>
+<span class="sd">    of simpler operations. (Technically an :class:`ImmutableOperation` can</span>
+<span class="sd">    represent a complex operation by using a :class:`TensorNetwork` as the data,</span>
+<span class="sd">    but that would be an uncommon use case.)</span>
+
+<span class="sd">    :ivar name: Name of the quantum operation. Defaults to &quot;GenOp&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;GenOp&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Operation.tree_string"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Operation.tree_string">[docs]</a>    <span class="k">def</span> <span class="nf">tree_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="sd">&quot;&quot;&quot;Return an indented string that describes the operation.</span>
+
+<span class="sd">        This is mainly used for visualization of :class:`Circuit` instances.</span>
+<span class="sd">        Notably, the returned string should not include the name of the</span>
+<span class="sd">        operation, which would already be included by default in the tree</span>
+<span class="sd">        string of the &quot;parent&quot; operation.</span>
+
+<span class="sd">        It is fine to return an empty string, but otherwise, the string should</span>
+<span class="sd">        be indented with `indent` copies of the string :data:`INDENT`, and</span>
+<span class="sd">        terminated with a newline.</span>
+
+<span class="sd">        :param indent: The amount of indent needed. Defaults to 0.</span>
+<span class="sd">        :type indent: int, optional</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Operation.__mul__"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Operation.__mul__">[docs]</a>    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return two operations in parallel as a quantum circuit.</span>
+
+<span class="sd">        The resulting :class:`Circuit` will have a number of qubits :math:`n`</span>
+<span class="sd">        equal to the total number of qubits in both operands, indexed by</span>
+<span class="sd">        integers from 0 to :math:`n-1`. The qubits are ordered naturally, i.e.,</span>
+<span class="sd">        qubits in the left operand come first, and within both operands the</span>
+<span class="sd">        original qubit orders are preserved.</span>
+
+<span class="sd">        Note that this function will regard both operands as atomic operations:</span>
+<span class="sd">        No attempt is made to &quot;expand&quot; the operands even if one or both of them</span>
+<span class="sd">        are themselves :class:`Circuit` instances.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Operation</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Circuit</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))),</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">shape</span><span class="p">))),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">NotImplemented</span></div>
+
+<div class="viewcode-block" id="Operation.__or__"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Operation.__or__">[docs]</a>    <span class="k">def</span> <span class="fm">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the concatenation of two operations as a quantum circuit.</span>
+
+<span class="sd">        The left operand will happen first. Note that this ordering convention</span>
+<span class="sd">        is different from how the result would be represented as a product of</span>
+<span class="sd">        matrices. For example, ``ZeroState | HGate | ZGate`` will result in the</span>
+<span class="sd">        state :math:`ZH|0\\rangle`.</span>
+
+<span class="sd">        If the left operand is a :class:`Circuit` instance, then the qubit names</span>
+<span class="sd">        in it will be preserved, and the same will apply to the right operand if</span>
+<span class="sd">        it is a :class:`Circuit` instance too; otherwise qubits in the right</span>
+<span class="sd">        operand will be indexed by integers from 0. The qubit names will</span>
+<span class="sd">        determine how the two circuits are connected.</span>
+
+<span class="sd">        If the left operand is not a :class:`Circuit` instance, then the qubits</span>
+<span class="sd">        in *both* operands will be indexed by integers from 0, and the circuits</span>
+<span class="sd">        will be connected correspondingly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Circuit</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Circuit</span><span class="p">):</span>
+                <span class="n">copy_self</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">operations_by_time</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">operations_by_time</span><span class="p">[</span><span class="n">time_step</span><span class="p">]:</span>
+                        <span class="n">operation</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">operations_by_time</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">op</span><span class="p">]</span>
+                        <span class="n">copy_self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">operation</span><span class="p">[</span><span class="s1">&#39;operation&#39;</span><span class="p">],</span>
+                                         <span class="n">operation</span><span class="p">[</span><span class="s1">&#39;qubits&#39;</span><span class="p">])</span>
+                <span class="k">return</span> <span class="n">copy_self</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">shape</span><span class="p">))))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Circuit</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))))</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">shape</span><span class="p">))))</span></div>
+
+    <span class="k">def</span> <span class="nf">_indices_with_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+               <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">i</span><span class="p">]))]</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_input_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;^[ibc]&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_output_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;.*[odc]$&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tensor_pure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the operation into a tensor network representing the action</span>
+<span class="sd">        of the operation in the pure state picture.</span>
+
+<span class="sd">        Examples of tensor representations in the pure state picture include</span>
+<span class="sd">        state vectors of pure states, and unitary matrices of unitary gates.</span>
+
+<span class="sd">        Raises an error if the operation is not pure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">.converter</span> <span class="kn">import</span> <span class="n">Converter</span>
+        <span class="k">return</span> <span class="n">Converter</span><span class="o">.</span><span class="n">convert_pure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tensor_density</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the operation into a tensor network representing the action</span>
+<span class="sd">        of the operation in the density matrix picture.</span>
+
+<span class="sd">        Examples of tensor representations in the density matrix picture include</span>
+<span class="sd">        density matrices of general quantum states, and Choi matrices of quantum</span>
+<span class="sd">        operations. As a special case, when the operation is pure, the tensor</span>
+<span class="sd">        network returned by :attr:`tensor_density` will consist of two disjoint</span>
+<span class="sd">        components, one being the tensor network returned by :attr:`tensor_pure`</span>
+<span class="sd">        and the other being its adjoint.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">.converter</span> <span class="kn">import</span> <span class="n">Converter</span>
+        <span class="k">return</span> <span class="n">Converter</span><span class="o">.</span><span class="n">convert_density</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tensor_control</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert a controlled operation into a tensor network in the pure</span>
+<span class="sd">        state picture, but with only one open edge for each controlling qubit.</span>
+
+<span class="sd">        A qubit in an operation can be regarded as a controlling qubit if its</span>
+<span class="sd">        value in the computational basis is never changed by the operation. As</span>
+<span class="sd">        such, its input wire and output wire can be represented by the same edge</span>
+<span class="sd">        in a tensor network, thus simplifying the tensor network. In other</span>
+<span class="sd">        words, the :attr:`tensor_pure` for a controlled operation will be a</span>
+<span class="sd">        block diagonal matrix, and its :attr:`tensor_control` will be a more</span>
+<span class="sd">        compact representation of the same matrix.</span>
+
+<span class="sd">        As a special case, if the operation is a diagonal gate, then every qubit</span>
+<span class="sd">        can be regarded as a controlling qubit. See :class:`Diagonal`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">.converter</span> <span class="kn">import</span> <span class="n">Converter</span>
+        <span class="k">return</span> <span class="n">Converter</span><span class="o">.</span><span class="n">convert_control</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Operation.adjoint"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Operation.adjoint">[docs]</a>    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="sd">&quot;&quot;&quot;Return the adjoint of a quantum operation. ``~op`` is an alias of</span>
+<span class="sd">        ``op.adjoint()``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="fm">__invert__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjoint</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ImmutableOperation"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ImmutableOperation">[docs]</a><span class="k">class</span> <span class="nc">ImmutableOperation</span><span class="p">(</span><span class="n">Operation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for quantum operations with explicit tensor representations. The</span>
+<span class="sd">    operation is not supposed to be modified.</span>
+
+<span class="sd">    :param data: A tensor representation of the operation. For this base class,</span>
+<span class="sd">        it will be the tensor returned by :attr:`~Operation.tensor_density`.</span>
+<span class="sd">        This means that for an operation with :math:`n` input qubits and</span>
+<span class="sd">        :math:`m` output qubits, the tensor should be of rank :math:`2(n+m)`.</span>
+<span class="sd">        A derived class of this may use different representation more suitable</span>
+<span class="sd">        for a specific class of operations.</span>
+<span class="sd">    :type data: acqdp.tensor_network.tensor_valued.TensorValued or np.ndarray</span>
+
+<span class="sd">    :ivar ~.shape: A list of strings describing the input and output qubits of</span>
+<span class="sd">        the quantum operation, with each string describing a qubit involved. For</span>
+<span class="sd">        this base class, each string should be one of &quot;i&quot;, &quot;o&quot; or &quot;io&quot;,</span>
+<span class="sd">        indicating whether each qubit is an input qubit, an output qubit, or</span>
+<span class="sd">        both.</span>
+<span class="sd">    :vartype ~.shape: List[str]</span>
+
+<span class="sd">    :ivar name: Name of the quantum operation. Defaults to &quot;ImOp&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">shape</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ImOp&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Operation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+<div class="viewcode-block" id="ImmutableOperation.process"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ImmutableOperation.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the input data into an appropriately shaped tensor, and</span>
+<span class="sd">        initialize the operation with this tensor.</span>
+
+<span class="sd">        A derived class that uses a different tensor representation of the</span>
+<span class="sd">        operation should override this function in order to do shape checking</span>
+<span class="sd">        and initialization correctly.</span>
+
+<span class="sd">        :param data: The ``data`` parameter passed to</span>
+<span class="sd">            :meth:`ImmutableOperation.__init__`.</span>
+<span class="sd">        :type data: acqdp.tensor_network.tensor_valued.TensorValued or</span>
+<span class="sd">            np.ndarray</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">lin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;^i&quot;</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">lout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;.*o$&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">TensorValued</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="nb">tuple</span><span class="p">([</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">lin</span> <span class="o">+</span> <span class="n">lout</span><span class="p">))):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: Input dimensions does not match the claimed shape&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tensor_density</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: Operation should be an np.ndarray.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_tensor_density</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">([</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">lin</span> <span class="o">+</span> <span class="n">lout</span><span class="p">)))))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: Operation dimension does not match qubits.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ImmutableOperation.operation_from_kraus"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ImmutableOperation.operation_from_kraus">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">operation_from_kraus</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">kraus</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ImOp_Kraus&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct a quantum operation from its Kraus operator representation.</span>
+
+<span class="sd">        :param shape: The shape of the operation, in the same format as the</span>
+<span class="sd">            :attr:`shape` attribute of :class:`ImmutableOperation`.</span>
+<span class="sd">        :type shape: List[str]</span>
+
+<span class="sd">        :param kraus: The list of Kraus operators.</span>
+<span class="sd">        :type kraus: List[acqdp.tensor_network.tensor_valued.TensorValued or</span>
+<span class="sd">            np.ndarray]</span>
+
+<span class="sd">        :param name: Name of the resulting quantum operation. Defaults to</span>
+<span class="sd">            &quot;ImOp_Kraus&quot;.</span>
+<span class="sd">        :type name: str, optional</span>
+
+<span class="sd">        :returns: A quantum operation constructed from the given Kraus operator</span>
+<span class="sd">            representation.</span>
+<span class="sd">        :rtype: ImmutableOperation</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lin</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">shape</span> <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;i&#39;</span><span class="p">])</span>
+        <span class="n">lout</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">shape</span> <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;o&#39;</span><span class="p">])</span>
+        <span class="n">shape_tensor</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">lin</span> <span class="o">+</span> <span class="n">lout</span><span class="p">))</span>
+        <span class="n">tensor_density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">tuple</span><span class="p">([</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">lin</span> <span class="o">+</span> <span class="n">lout</span><span class="p">))))</span>
+        <span class="k">for</span> <span class="n">operator</span> <span class="ow">in</span> <span class="n">kraus</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operator</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: Kraus Operator should be an np.ndarray.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">shape_tensor</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">lout</span><span class="p">,</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">lin</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: Dimensions do not match&quot;</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">operator</span><span class="p">,</span> <span class="n">shape_tensor</span><span class="p">)</span>
+            <span class="n">tensor_density</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">tensor_density</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_pure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the operation is a pure operation.</span>
+
+<span class="sd">        Pure operations include pure states, isometries, projections and their</span>
+<span class="sd">        combinations.</span>
+
+<span class="sd">        Note that currently this function determines whether an operation is</span>
+<span class="sd">        pure solely based on the class of the operation, without inspecting the</span>
+<span class="sd">        actual data. For example, if a quantum state ``s`` is initialized with</span>
+<span class="sd">        ``s = State(num_qubits, data)``, then ``s.is_pure`` will always be False</span>
+<span class="sd">        and ``s.tensor_pure`` will always raise an error, even if ``data`` is</span>
+<span class="sd">        actually the density matrix of a pure state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">PureOperation</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="State"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.State">[docs]</a><span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">ImmutableOperation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for simple quantum states.</span>
+
+<span class="sd">    Quantum states are regarded as a special case of quantum operations where</span>
+<span class="sd">    there is no input qubit, and each qubit is an output qubit.</span>
+
+<span class="sd">    :param num_qubits: Number of qubits in the state.</span>
+<span class="sd">    :type num_qubits: int</span>
+
+<span class="sd">    :param data: The density matrix representation of the state.</span>
+<span class="sd">    :type data: acqdp.tensor_network.tensor_valued.TensorValued or np.ndarray</span>
+
+<span class="sd">    :ivar name: Name of the quantum state. Defaults to &quot;State&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">num_qubits</span><span class="p">,</span>
+                 <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s2">&quot;State&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ImmutableOperation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">([</span><span class="s1">&#39;o&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_qubits</span><span class="p">),</span> <span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Measurement"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Measurement">[docs]</a><span class="k">class</span> <span class="nc">Measurement</span><span class="p">(</span><span class="n">ImmutableOperation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for simple (destructive) measurements.</span>
+
+<span class="sd">    Destructive measurements are regarded as a special case of quantum</span>
+<span class="sd">    operations where each qubit is an input qubit, and there is no output</span>
+<span class="sd">    qubit. Such a measurement maps an arbitrary quantum state to a number.</span>
+
+<span class="sd">    :param num_qubits: Number of qubits measured.</span>
+<span class="sd">    :type num_qubits: int</span>
+
+<span class="sd">    :param data: The POVM (positive operator-valued measure) representation of</span>
+<span class="sd">        the measurement.</span>
+<span class="sd">    :type data: acqdp.tensor_network.tensor_valued.TensorValued or np.ndarray</span>
+
+<span class="sd">    :ivar name: Name of the quantum state. Defaults to &quot;Meas&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">num_qubits</span><span class="p">,</span>
+                 <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Meas&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ImmutableOperation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">([</span><span class="s1">&#39;i&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_qubits</span><span class="p">),</span> <span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Channel"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Channel">[docs]</a><span class="k">class</span> <span class="nc">Channel</span><span class="p">(</span><span class="n">ImmutableOperation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for simple quantum channels.</span>
+
+<span class="sd">    This class is used for the common case where the input and output Hilbert</span>
+<span class="sd">    spaces are the same, i.e., each qubit is both an input qubit and an output</span>
+<span class="sd">    qubit. For channels that do not satisfy this constraint, please use</span>
+<span class="sd">    :class:`ImmutableOperation` directly.</span>
+
+<span class="sd">    :param num_qubits: Number of qubits the channel operates on.</span>
+<span class="sd">    :type num_qubits: int</span>
+
+<span class="sd">    :param data: The tensor representation of the channel in the density matrix</span>
+<span class="sd">        picture.</span>
+<span class="sd">    :type data: acqdp.tensor_network.tensor_valued.TensorValued or np.ndarray</span>
+
+<span class="sd">    :ivar name: Name of the quantum operation. Defaults to &quot;Channel&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">num_qubits</span><span class="p">,</span>
+                 <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Channel&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ImmutableOperation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">([</span><span class="s1">&#39;io&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_qubits</span><span class="p">),</span> <span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PureOperation"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.PureOperation">[docs]</a><span class="k">class</span> <span class="nc">PureOperation</span><span class="p">(</span><span class="n">ImmutableOperation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for simple pure quantum operations.</span>
+
+<span class="sd">    :param data: The tensor representation of the operation in the pure state</span>
+<span class="sd">        picture. It will be the tensor returned by</span>
+<span class="sd">        :attr:`~Operation.tensor_pure`. This means that for an operation with</span>
+<span class="sd">        :math:`n` input qubits and :math:`m` output qubits, the tensor should be</span>
+<span class="sd">        of rank :math:`n+m`, i.e., half the rank of the tensor in the density</span>
+<span class="sd">        matrix picture.</span>
+<span class="sd">    :type data: acqdp.tensor_network.tensor_valued.TensorValued or np.ndarray</span>
+
+<span class="sd">    :ivar ~.shape: The shape of the operation, in the same format as the</span>
+<span class="sd">        :attr:`shape` attribute of :class:`ImmutableOperation`.</span>
+<span class="sd">    :vartype ~.shape: List[str]</span>
+
+<span class="sd">    :ivar name: Name of the quantum operation. Defaults to &quot;PureOp&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+
+<span class="sd">    :ivar self_adjoint: Whether the operation is self-adjoint. Defaults to</span>
+<span class="sd">        False.</span>
+<span class="sd">    :vartype self_adjoint: bool, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">shape</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s2">&quot;PureOp&quot;</span><span class="p">,</span>
+                 <span class="n">self_adjoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ImmutableOperation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">self_adjoint</span> <span class="o">=</span> <span class="n">self_adjoint</span>
+
+<div class="viewcode-block" id="PureOperation.set_adjoint_op"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.PureOperation.set_adjoint_op">[docs]</a>    <span class="k">def</span> <span class="nf">set_adjoint_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adjoint_op</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the known adjoint of the operation.</span>
+
+<span class="sd">        Usually, the adjoint of a pure operation is constructed on demand by</span>
+<span class="sd">        calculating the :attr:`~Operation.tensor_pure` of the operation, then</span>
+<span class="sd">        constructing a new :class:`PureOperation` object, which can be an</span>
+<span class="sd">        inefficient process. By setting the adjoint of a operation to a known</span>
+<span class="sd">        value, one can bypass this procedure. Note that, for efficiency, there</span>
+<span class="sd">        is no check that ``adjoint_op`` is actually the adjoint of ``self``.</span>
+
+<span class="sd">        The adjoint of ``adjoint_op`` is also set to ``self`` so there is no</span>
+<span class="sd">        need to use this function twice.</span>
+
+<span class="sd">        :param adjoint_op: The known adjoint of ``self``.</span>
+<span class="sd">        :type adjoint_op: PureOperation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adjoint_op</span> <span class="o">=</span> <span class="n">adjoint_op</span>
+        <span class="n">adjoint_op</span><span class="o">.</span><span class="n">adjoint_op</span> <span class="o">=</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="PureOperation.process"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.PureOperation.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">lin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;^i&quot;</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">lout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;.*o$&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">TensorValued</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="nb">tuple</span><span class="p">([</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">lin</span> <span class="o">+</span> <span class="n">lout</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: Input dimensions does not match the claimed shape&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tensor_pure</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: Operation should be an np.ndarray.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_tensor_pure</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">([</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">lin</span> <span class="o">+</span> <span class="n">lout</span><span class="p">))))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: Operation dimension does not match qubits.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PureOperation.adjoint"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.PureOperation.adjoint">[docs]</a>    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_adjoint</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;adjoint_op&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjoint_op</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">transition_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;i&#39;</span><span class="p">:</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="s1">&#39;o&#39;</span><span class="p">:</span> <span class="s1">&#39;i&#39;</span><span class="p">}</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">transition_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">]</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">lin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;^i&quot;</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">lout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;.*o$&quot;</span><span class="p">)</span>
+            <span class="n">tensor_pure</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">_tensor_pure</span><span class="p">)</span> <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">lout</span><span class="p">,</span> <span class="n">lout</span> <span class="o">+</span> <span class="n">lin</span><span class="p">))</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">lout</span><span class="p">)))</span>
+            <span class="k">return</span> <span class="n">PureOperation</span><span class="p">(</span><span class="n">tensor_pure</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="s2">&quot;~&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="PureState"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.PureState">[docs]</a><span class="k">class</span> <span class="nc">PureState</span><span class="p">(</span><span class="n">PureOperation</span><span class="p">,</span> <span class="n">State</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for simple pure quantum states.</span>
+
+<span class="sd">    :param num_qubits: Number of qubits in the state.</span>
+<span class="sd">    :type num_qubits: int</span>
+
+<span class="sd">    :param data: The state vector representation of the state.</span>
+<span class="sd">    :type data: acqdp.tensor_network.tensor_valued.TensorValued or np.ndarray</span>
+
+<span class="sd">    :ivar name: Name of the quantum state. Defaults to &quot;PureState&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">num_qubits</span><span class="p">,</span>
+                 <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PureState&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">PureOperation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">([</span><span class="s1">&#39;o&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_qubits</span><span class="p">),</span> <span class="n">name</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PureMeas"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.PureMeas">[docs]</a><span class="k">class</span> <span class="nc">PureMeas</span><span class="p">(</span><span class="n">PureOperation</span><span class="p">,</span> <span class="n">Measurement</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for simple projective measurements.</span>
+
+<span class="sd">    :param num_qubits: Number of qubits measured.</span>
+<span class="sd">    :type num_qubits: int</span>
+
+<span class="sd">    :param data: The vector representation of the measurement. Note that it</span>
+<span class="sd">        should be the *complex conjugation* of the state vector of the state</span>
+<span class="sd">        projected onto.</span>
+<span class="sd">    :type data: acqdp.tensor_network.tensor_valued.TensorValued or np.ndarray</span>
+
+<span class="sd">    :ivar name: Name of the quantum state. Defaults to &quot;PureMeas&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">num_qubits</span><span class="p">,</span>
+                 <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PureMeas&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">PureOperation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">([</span><span class="s1">&#39;i&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_qubits</span><span class="p">),</span> <span class="n">name</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Unitary"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Unitary">[docs]</a><span class="k">class</span> <span class="nc">Unitary</span><span class="p">(</span><span class="n">PureOperation</span><span class="p">,</span> <span class="n">Channel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for simple unitary gates.</span>
+
+<span class="sd">    :param num_qubits: Number of qubits the unitary operates on.</span>
+<span class="sd">    :type num_qubits: int</span>
+
+<span class="sd">    :param data: The matrix representation of the unitary.</span>
+<span class="sd">    :type data: acqdp.tensor_network.tensor_valued.TensorValued or np.ndarray</span>
+
+<span class="sd">    :ivar name: Name of the quantum state. Defaults to &quot;Unitary&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+
+<span class="sd">    :ivar self_adjoint: Whether the unitary is self-adjoint. Defaults to False.</span>
+<span class="sd">    :vartype self_adjoint: bool, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">num_qubits</span><span class="p">,</span>
+                 <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Unitary&#39;</span><span class="p">,</span>
+                 <span class="n">self_adjoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">PureOperation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">([</span><span class="s1">&#39;io&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_qubits</span><span class="p">),</span> <span class="n">name</span><span class="p">,</span> <span class="n">self_adjoint</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ControlledOperation"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ControlledOperation">[docs]</a><span class="k">class</span> <span class="nc">ControlledOperation</span><span class="p">(</span><span class="n">PureOperation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for simple controlled operations.</span>
+
+<span class="sd">    :param data: The tensor representation of the controlled operation. It will</span>
+<span class="sd">        be the tensor returned by :attr:`~Operation.tensor_control`. This means</span>
+<span class="sd">        that for an operation with :math:`k` controlling qubits, :math:`n`</span>
+<span class="sd">        non-control input qubits and :math:`m` non-control output qubits, the</span>
+<span class="sd">        tensor should be of rank :math:`k+n+m`.</span>
+<span class="sd">    :type data: acqdp.tensor_network.tensor_valued.TensorValued or np.ndarray</span>
+
+<span class="sd">    :ivar ~.shape: The shape of the operation, in the same format as the</span>
+<span class="sd">        :attr:`shape` attribute of :class:`ImmutableOperation`, but in addition</span>
+<span class="sd">        to &quot;i&quot;, &quot;o&quot;, and &quot;io&quot;, the string &quot;c&quot; is also allowed, which indicates a</span>
+<span class="sd">        controlling qubit.</span>
+<span class="sd">    :vartype ~.shape: List[str]</span>
+
+<span class="sd">    :ivar name: Name of the quantum operation. Defaults to &quot;C-Op&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+
+<span class="sd">    :ivar self_adjoint: Whether the operation is self-adjoint. Defaults to</span>
+<span class="sd">        False.</span>
+<span class="sd">    :vartype self_adjoint: bool, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">shape</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s2">&quot;C-Op&quot;</span><span class="p">,</span>
+                 <span class="n">self_adjoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">PureOperation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">self_adjoint</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ControlledOperation.process"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ControlledOperation.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">lctrl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;^c$&quot;</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">lin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;^i&quot;</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">lout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;.*o$&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">TensorValued</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="nb">tuple</span><span class="p">([</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">lctrl</span> <span class="o">+</span> <span class="n">lin</span> <span class="o">+</span> <span class="n">lout</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: Input dimensions does not match the claimed shape&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tensor_control</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: Operation should be an np.ndarray.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_tensor_control</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">([</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">lctrl</span> <span class="o">+</span> <span class="n">lin</span> <span class="o">+</span> <span class="n">lout</span><span class="p">))))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: Operation dimension does not match qubits.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ControlledOperation.adjoint"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ControlledOperation.adjoint">[docs]</a>    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_adjoint</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">transition_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;i&#39;</span><span class="p">:</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="s1">&#39;o&#39;</span><span class="p">:</span> <span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="s1">&#39;c&#39;</span><span class="p">}</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">transition_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">]</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">lctrl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;^c$&quot;</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">lin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;^i&quot;</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">lout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;.*o$&quot;</span><span class="p">)</span>
+            <span class="n">tensor_control</span> <span class="o">=</span> <span class="o">~</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tensor_control</span><span class="p">)</span>\
+                <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">lctrl</span><span class="p">))</span>
+                        <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">lctrl</span> <span class="o">+</span> <span class="n">lout</span><span class="p">,</span> <span class="n">lctrl</span> <span class="o">+</span> <span class="n">lout</span> <span class="o">+</span> <span class="n">lin</span><span class="p">))</span>
+                        <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">lctrl</span><span class="p">,</span> <span class="n">lctrl</span> <span class="o">+</span> <span class="n">lout</span><span class="p">)))</span>
+            <span class="k">return</span> <span class="n">ControlledOperation</span><span class="p">(</span><span class="n">tensor_control</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="s2">&quot;~&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Diagonal"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Diagonal">[docs]</a><span class="k">class</span> <span class="nc">Diagonal</span><span class="p">(</span><span class="n">ControlledOperation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for simple diagonal gates.</span>
+
+<span class="sd">    A diagonal gate can be regarded as a controlled phase shift, where every</span>
+<span class="sd">    qubit is a controlling qubit.</span>
+
+<span class="sd">    :param num_qubits: Number of qubits the diagonal gate operates on.</span>
+<span class="sd">    :type num_qubits: int</span>
+
+<span class="sd">    :param data: The diagonal elements of the matrix representation of the gate.</span>
+<span class="sd">    :type data: acqdp.tensor_network.tensor_valued.TensorValued or np.ndarray</span>
+
+<span class="sd">    :ivar name: Name of the quantum state. Defaults to &quot;Diag&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+
+<span class="sd">    :ivar self_adjoint: Whether the gate is self-adjoint. Defaults to False.</span>
+<span class="sd">    :vartype self_adjoint: bool, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">num_cbits</span><span class="p">,</span>
+                 <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Diag&#39;</span><span class="p">,</span>
+                 <span class="n">self_adjoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ControlledOperation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">([</span><span class="s1">&#39;c&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_cbits</span><span class="p">),</span> <span class="n">name</span><span class="p">,</span> <span class="n">self_adjoint</span><span class="p">)</span></div>
+
+
+<span class="n">XGate</span> <span class="o">=</span> <span class="n">Unitary</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span> <span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit Pauli X gate.&quot;&quot;&quot;</span>
+
+<span class="n">YGate</span> <span class="o">=</span> <span class="n">Unitary</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="n">j</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit Pauli Y gate.&quot;&quot;&quot;</span>
+
+<span class="n">ZGate</span> <span class="o">=</span> <span class="n">Diagonal</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit Pauli Z gate.&quot;&quot;&quot;</span>
+
+<span class="n">HGate</span> <span class="o">=</span> <span class="n">Unitary</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]),</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit Hadamard gate.&quot;&quot;&quot;</span>
+
+<span class="n">TGate</span> <span class="o">=</span> <span class="n">Diagonal</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)]),</span> <span class="s2">&quot;T&quot;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit T gate, i.e., a :math:`\\pi/4` rotation around the Z axis on the Bloch sphere.&quot;&quot;&quot;</span>
+
+<span class="n">SGate</span> <span class="o">=</span> <span class="n">Diagonal</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="n">j</span><span class="p">]),</span> <span class="s2">&quot;S&quot;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit S gate, i.e., a :math:`\\pi/2` rotation around the Z axis on the Bloch sphere.&quot;&quot;&quot;</span>
+
+<span class="n">Trace</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TensorNetwork</span><span class="p">(</span><span class="n">open_edges</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bond_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="s2">&quot;Tr&quot;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;The partial trace operation, defined as an measurement that maps every</span>
+<span class="sd">normalized single-qubit state to 1.</span>
+
+<span class="sd">In a circuit, a partial trace operation can simulate discarding a qubit. Note</span>
+<span class="sd">that this operation is inherently not pure since discarding one part of an</span>
+<span class="sd">entangled pure state will result in a mixed state.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="n">IGate</span> <span class="o">=</span> <span class="n">Unitary</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">TensorNetwork</span><span class="p">(</span><span class="n">open_edges</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bond_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+                <span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit Identity gate.&quot;&quot;&quot;</span>
+
+
+<span class="n">SWAPGate</span> <span class="o">=</span> <span class="n">Unitary</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span>
+                   <span class="n">TensorNetwork</span><span class="p">(</span><span class="n">open_edges</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bond_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+                   <span class="s2">&quot;SWAP&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Two-qubit SWAP gate.&quot;&quot;&quot;</span>
+
+<span class="n">CZGate</span> <span class="o">=</span> <span class="n">Diagonal</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;CZ&#39;</span><span class="p">,</span> <span class="n">self_adjoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Two-qubit CZ gate.&quot;&quot;&quot;</span>
+
+<span class="n">XHalfGate</span> <span class="o">=</span> <span class="n">Unitary</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span><span class="n">j</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span><span class="n">j</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="p">]])</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span>
+                    <span class="s2">&quot;X/2&quot;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit :math:`\\sqrt{X}` gate.&quot;&quot;&quot;</span>
+
+<span class="n">YHalfGate</span> <span class="o">=</span> <span class="n">Unitary</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span><span class="n">j</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="p">]])</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span>
+                    <span class="s2">&quot;Y/2&quot;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit :math:`\\sqrt{Y}` gate.&quot;&quot;&quot;</span>
+
+<span class="n">CNOTGate</span> <span class="o">=</span> <span class="n">ControlledOperation</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]]),</span>
+                             <span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;io&#39;</span><span class="p">],</span>
+                             <span class="s2">&quot;CNOT&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Two-qubit CNOT gate.&quot;&quot;&quot;</span>
+
+<span class="n">ZeroState</span> <span class="o">=</span> <span class="n">PureState</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="s1">&#39;|0&gt;&#39;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit state :math:`|0\\rangle`.&quot;&quot;&quot;</span>
+
+<span class="n">OneState</span> <span class="o">=</span> <span class="n">PureState</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="s1">&#39;|1&gt;&#39;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit state :math:`|1\\rangle`.&quot;&quot;&quot;</span>
+
+<span class="n">CompState</span> <span class="o">=</span> <span class="p">[</span><span class="n">ZeroState</span><span class="p">,</span> <span class="n">OneState</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;List of the computational basis states, :math:`|0\\rangle` and :math:`|1\\rangle`.&quot;&quot;&quot;</span>
+
+<span class="n">PlusState</span> <span class="o">=</span> <span class="n">PureState</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]),</span> <span class="s1">&#39;|+&gt;&#39;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit state :math:`|+\\rangle`.&quot;&quot;&quot;</span>
+
+<span class="n">MinusState</span> <span class="o">=</span> <span class="n">PureState</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]),</span> <span class="s1">&#39;|-&gt;&#39;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit state :math:`|-\\rangle`.&quot;&quot;&quot;</span>
+
+<span class="n">FourierState</span> <span class="o">=</span> <span class="p">[</span><span class="n">PlusState</span><span class="p">,</span> <span class="n">MinusState</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;List of the Hadamard basis states, :math:`|+\\rangle` and :math:`|-\\rangle`.&quot;&quot;&quot;</span>
+
+<span class="n">ZeroMeas</span> <span class="o">=</span> <span class="n">PureMeas</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="s1">&#39;&lt;0|&#39;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit measurement :math:`\\langle 0|`, the adjoint of :math:`|0\\rangle`.&quot;&quot;&quot;</span>
+
+<span class="n">OneMeas</span> <span class="o">=</span> <span class="n">PureMeas</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="s1">&#39;&lt;1|&#39;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit measurement :math:`\\langle 1|`, the adjoint of :math:`|1\\rangle`.&quot;&quot;&quot;</span>
+
+<span class="n">CompMeas</span> <span class="o">=</span> <span class="p">[</span><span class="n">ZeroMeas</span><span class="p">,</span> <span class="n">OneMeas</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;List of the computational basis measurements, :math:`\\langle 0|` and :math:`\\langle 1|`.&quot;&quot;&quot;</span>
+
+<span class="n">PlusMeas</span> <span class="o">=</span> <span class="n">PureMeas</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]),</span> <span class="s1">&#39;&lt;+|&#39;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit measurement :math:`\\langle +|`, the adjoint of :math:`|+\\rangle`.&quot;&quot;&quot;</span>
+
+<span class="n">MinusMeas</span> <span class="o">=</span> <span class="n">PureMeas</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]),</span> <span class="s1">&#39;&lt;-|&#39;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;Single-qubit measurement :math:`\\langle -|`, the adjoint of :math:`|-\\rangle`.&quot;&quot;&quot;</span>
+
+<span class="n">FourierMeas</span> <span class="o">=</span> <span class="p">[</span><span class="n">PlusMeas</span><span class="p">,</span> <span class="n">MinusMeas</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;List of the computational basis measurements, :math:`\\langle +|` and :math:`\\langle -|`.&quot;&quot;&quot;</span>
+
+<span class="n">NDCompMeas</span> <span class="o">=</span> <span class="n">Channel</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TensorNetwork</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">bond_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="s1">&#39;ND&#39;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;A non-destructive computational basis measurement.</span>
+
+<span class="sd">This is equivalent to :class:`acqdp.circuit.noise.Dephasing()`, but with a</span>
+<span class="sd">slightly more efficient tensor network representation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">ZeroState</span><span class="o">.</span><span class="n">set_adjoint_op</span><span class="p">(</span><span class="n">ZeroMeas</span><span class="p">)</span>
+<span class="n">OneState</span><span class="o">.</span><span class="n">set_adjoint_op</span><span class="p">(</span><span class="n">OneMeas</span><span class="p">)</span>
+<span class="n">PlusState</span><span class="o">.</span><span class="n">set_adjoint_op</span><span class="p">(</span><span class="n">PlusMeas</span><span class="p">)</span>
+<span class="n">MinusState</span><span class="o">.</span><span class="n">set_adjoint_op</span><span class="p">(</span><span class="n">MinusMeas</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="XRotation"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.XRotation">[docs]</a><span class="k">class</span> <span class="nc">XRotation</span><span class="p">(</span><span class="n">Unitary</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for X Rotation gates in the form of :math:`e^{i\\theta X}`.</span>
+
+<span class="sd">    Note that, since the eigenvalues of the Pauli operator :math:`X` are 1 and</span>
+<span class="sd">    -1, this actually corresponds to a rotation by :math:`2\\theta` on the Bloch</span>
+<span class="sd">    sphere. For example, ``XRotation(np.pi)`` is a global phase operation with</span>
+<span class="sd">    no physical effect, equivalent to a rotation by :math:`2\\pi` on the Bloch</span>
+<span class="sd">    sphere. On the other hand, ``XRotation(np.pi / 2)`` is equivalent to the</span>
+<span class="sd">    Pauli X operator up to a global phase, i.e., a rotation by :math:`\\pi`</span>
+<span class="sd">    around the X axis on the Bloch sphere.</span>
+
+<span class="sd">    :ivar angle: The rotation angle :math:`\\theta`.</span>
+<span class="sd">    :vartype angle: float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="n">angle</span>
+        <span class="n">Unitary</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)],</span>
+                                  <span class="p">[</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)]]),</span>
+                         <span class="s2">&quot;R_X&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="XRotation.adjoint"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.XRotation.adjoint">[docs]</a>    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">XRotation</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ZRotation"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ZRotation">[docs]</a><span class="k">class</span> <span class="nc">ZRotation</span><span class="p">(</span><span class="n">Diagonal</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for Z Rotation gates in the form of :math:`e^{i\\theta Z}`.</span>
+
+<span class="sd">    The same note about :class:`XRotation` applies here. Furthermore, note that</span>
+<span class="sd">    the rotation direction is the reverse of the &quot;natural&quot; direction given by</span>
+<span class="sd">    :math:`\\mathop{\\mathrm{diag}}(1, e^{i\\theta})`, since the actual rotation</span>
+<span class="sd">    is :math:`\\mathop{\\mathrm{diag}}(e^{i\\theta}, e^{-i\\theta})`. For</span>
+<span class="sd">    example, ``ZRotation(-np.pi / 8)`` and ``ZRotation(-np.pi / 4)`` will give</span>
+<span class="sd">    the T gate and the S gate respectively, up to global phases.</span>
+
+<span class="sd">    :ivar angle: The rotation angle :math:`\\theta`.</span>
+<span class="sd">    :vartype angle: float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="n">angle</span>
+        <span class="n">Diagonal</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+                          <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">angle</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">angle</span><span class="p">)]),</span>
+                          <span class="s2">&quot;R_Z(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span>
+
+<div class="viewcode-block" id="ZRotation.adjoint"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ZRotation.adjoint">[docs]</a>    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ZRotation</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Circuit"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Circuit">[docs]</a><span class="k">class</span> <span class="nc">Circuit</span><span class="p">(</span><span class="n">Operation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for quantum circuits that can be manipulated by adding and removing</span>
+<span class="sd">    operations.</span>
+
+<span class="sd">    Each operation in a circuit has a name that is unique within the circuit,</span>
+<span class="sd">    not necessarily related to its own :attr:`name` attribute. Each operation</span>
+<span class="sd">    also has a time step which determines the order of the operations. For</span>
+<span class="sd">    applications where those do not matter, they can be kept at their default</span>
+<span class="sd">    values; see :meth:`append` for those default values.</span>
+
+<span class="sd">    A circuit is always empty when initialized.</span>
+
+<span class="sd">    :ivar name: Name of the quantum circuit. Defaults to &quot;Circuit&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+
+<span class="sd">    :ivar operations_by_name: A dict mapping from operation names to dicts</span>
+<span class="sd">        describing operations in the circuit. Each of the latter dicts ``d`` has</span>
+<span class="sd">        three entries:</span>
+
+<span class="sd">        * ``d[&quot;operation&quot;]`` is the actual :class:`Operation`.</span>
+<span class="sd">        * ``d[&quot;time_step&quot;]`` gives the time step at which the opration happens.</span>
+<span class="sd">        * ``d[&quot;qubits&quot;]`` is a list of qubits indicating which qubits in the</span>
+<span class="sd">          circuit the operation is applied to.</span>
+<span class="sd">    :vartype operations_by_name: Dict[hashable, dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Circuit&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Operation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">max_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return the maximum time step among all operations in the circuit.&quot;&quot;&quot;</span>
+        <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;time_step&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+
+<div class="viewcode-block" id="Circuit.append"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Circuit.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+               <span class="n">operation</span><span class="p">:</span> <span class="n">Operation</span><span class="p">,</span>
+               <span class="n">qubits</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+               <span class="n">time_step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+               <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Add an operation to the circuit.</span>
+
+<span class="sd">        If a time step is given, the operation is inserted into the circuit at</span>
+<span class="sd">        the given time. Otherwise, the operation is appended to the end of the</span>
+<span class="sd">        circuit.</span>
+
+<span class="sd">        :param operation: The operation to add to the circuit.</span>
+<span class="sd">        :type operation: Operation</span>
+
+<span class="sd">        :param qubits: The qubits the operation is applied to. Qubit names can</span>
+<span class="sd">            be anything as long as they are hashable and comparable with each</span>
+<span class="sd">            other. Any qubits not already in the circuit are added to the</span>
+<span class="sd">            circuit.</span>
+<span class="sd">        :type qubits: list</span>
+
+<span class="sd">        :param time_step: The time step at which the operation happens. Defaults</span>
+<span class="sd">            to :attr:`max_time` plus one, which ensures that the operation is</span>
+<span class="sd">            appended to the end of the cirucit.</span>
+<span class="sd">        :type time_step: int or float, optional</span>
+
+<span class="sd">        :param name: The name of the operation in the circuit. By default, the</span>
+<span class="sd">            name is a tuple generated from ``time_step`` and ``qubits``,</span>
+<span class="sd">            ensuring its uniqueness within the circuit.</span>
+<span class="sd">        :type name: hashable, optional</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">time_step</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">time_step</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_time</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_step</span><span class="p">,</span>
+                    <span class="nb">tuple</span><span class="p">([</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">qubits</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">qubits</span><span class="p">))</span>
+           <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid qubits: qubits not match operation.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;operation&quot;</span><span class="p">:</span> <span class="n">operation</span><span class="p">,</span>
+                                         <span class="s2">&quot;time_step&quot;</span><span class="p">:</span> <span class="n">time_step</span><span class="p">,</span>
+                                         <span class="s2">&quot;qubits&quot;</span><span class="p">:</span> <span class="n">qubits</span><span class="p">}</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">operations_by_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return an :class:`OrderedDict` of dicts, which is an reorganization</span>
+<span class="sd">        of :attr:`operations_by_name` such that ``c.operations_by_time[t][name]</span>
+<span class="sd">        == c.operations_by_name[name]``, where ``t`` is the time step of the</span>
+<span class="sd">        operation in question.</span>
+
+<span class="sd">        The returned ``OrderedDict`` in ordered by increasing time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">time_steps</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">time_steps</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">:</span>
+            <span class="n">d</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">g</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]][</span><span class="n">g</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">g</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+
+<div class="viewcode-block" id="Circuit.tree_string"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Circuit.tree_string">[docs]</a>    <span class="k">def</span> <span class="nf">tree_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+        <span class="n">indentation</span> <span class="o">=</span> <span class="n">indent</span> <span class="o">*</span> <span class="n">INDENT</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">indentation</span> <span class="o">+</span> <span class="s2">&quot;Ops:</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_time</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="n">t</span><span class="p">]:</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="n">indentation</span> <span class="o">+</span> <span class="n">INDENT</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="n">d</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;operation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tree_string</span><span class="p">(</span><span class="n">indent</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="n">indentation</span> <span class="o">+</span> <span class="s2">&quot;End of circuit</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">s</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_qubits</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Return a list of all qubits in the circuit.&quot;&quot;&quot;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">g</span><span class="p">][</span><span class="s2">&quot;qubits&quot;</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">dic</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="p">):</span> <span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">s</span><span class="p">}</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">dic</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dic</span><span class="p">)]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Return the shape of the circuit as an operation, in the same format</span>
+<span class="sd">        as the :attr:`~ImmutableOperation.shape` attribute of</span>
+<span class="sd">        :class:`ImmutableOperation`.</span>
+
+<span class="sd">        Raises an :class:`ValueError` if the circuit is invalid. This can happen</span>
+<span class="sd">        if a qubit is used multiple times at the same time step, or if the</span>
+<span class="sd">        shapes of adjacent operations on the same qubit do not fit together,</span>
+<span class="sd">        such as a quantum state followed by another quantum state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="s2">&quot;&quot;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_qubits</span><span class="p">}</span>
+        <span class="n">trans_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="s1">&#39;io&#39;</span><span class="p">,</span> <span class="s1">&#39;i&#39;</span><span class="p">:</span> <span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;o&#39;</span><span class="p">:</span> <span class="s1">&#39;o&#39;</span><span class="p">}</span>
+        <span class="n">last_time_used</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_qubits</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_time</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">gate_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_time</span><span class="p">[</span><span class="n">time_step</span><span class="p">]:</span>
+                <span class="n">gate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">gate_name</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">qubit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gate</span><span class="p">[</span><span class="s1">&#39;qubits&#39;</span><span class="p">]):</span>
+                    <span class="k">if</span> <span class="n">last_time_used</span><span class="p">[</span><span class="n">qubit</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">time_step</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid connection: Qubit </span><span class="si">{}</span><span class="s2"> used multiple times at timestep </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">qubit</span><span class="p">,</span> <span class="n">time_step</span><span class="p">))</span>
+                    <span class="n">last_time_used</span><span class="p">[</span><span class="n">qubit</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_step</span>
+                    <span class="n">shape</span><span class="p">[</span><span class="n">qubit</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">trans_dict</span><span class="p">[</span><span class="n">letter</span><span class="p">]</span> <span class="k">for</span> <span class="n">letter</span> <span class="ow">in</span> <span class="n">gate</span><span class="p">[</span><span class="s1">&#39;operation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;^o?(io)*i?$&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">qubit</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">qubit</span><span class="p">]):</span>
+                <span class="n">shape</span><span class="p">[</span><span class="n">qubit</span><span class="p">]</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="n">qubit</span><span class="p">][:</span> <span class="mi">2</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">qubit</span><span class="p">])</span> <span class="o">%</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid connection on qubit </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">qubit</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">qubit</span><span class="p">]</span> <span class="k">for</span> <span class="n">qubit</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return True if the circuit is valid.</span>
+
+<span class="sd">        See :attr:`shape` for ways a circuit can be invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_pure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the operation is a pure operation.</span>
+
+<span class="sd">        Pure operations include pure states, isometries, projections and their</span>
+<span class="sd">        combinations.</span>
+
+<span class="sd">        Similar to :attr:`ImmutableOperation.is_pure`, this does not analyze the</span>
+<span class="sd">        actual action of the circuit, and only checks whether the component</span>
+<span class="sd">        operations are all pure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_valid</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;operation&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">is_pure</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+
+<div class="viewcode-block" id="Circuit.adjoint"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Circuit.adjoint">[docs]</a>    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_pure</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ValueError: Noisy circuit does not have an adjoint&quot;</span><span class="p">)</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">Circuit</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">operation_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">:</span>
+            <span class="n">operation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">operation_name</span><span class="p">][</span><span class="s1">&#39;operation&#39;</span><span class="p">]</span>
+            <span class="n">qubits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">operation_name</span><span class="p">][</span><span class="s1">&#39;qubits&#39;</span><span class="p">]</span>
+            <span class="n">time_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">operation_name</span><span class="p">][</span><span class="s1">&#39;time_step&#39;</span><span class="p">]</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">~</span><span class="n">operation</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">time_step</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span></div>
+
+    <span class="k">def</span> <span class="nf">__copy__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">Circuit</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">operation_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">:</span>
+            <span class="n">operation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">operation_name</span><span class="p">][</span><span class="s1">&#39;operation&#39;</span><span class="p">]</span>
+            <span class="n">qubits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">operation_name</span><span class="p">][</span><span class="s1">&#39;qubits&#39;</span><span class="p">]</span>
+            <span class="n">time_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">operation_name</span><span class="p">][</span><span class="s1">&#39;time_step&#39;</span><span class="p">]</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">operation_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span></div>
+
+
+<div class="viewcode-block" id="ControlledCircuit"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ControlledCircuit">[docs]</a><span class="k">class</span> <span class="nc">ControlledCircuit</span><span class="p">(</span><span class="n">ControlledOperation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for quantum circuits controlled by a single qubit.</span>
+
+<span class="sd">    :ivar ~_.circuit: The circuit being controlled.</span>
+<span class="sd">    :vartype ~_.circuit: Circuit</span>
+
+<span class="sd">    :ivar name: Name of the controlled circuit. Defaults to &quot;C-&lt;circuit&gt;&quot;, where</span>
+<span class="sd">        &lt;circuit&gt; is the name of the circuit being controlled.</span>
+<span class="sd">    :vartype name: str, optional</span>
+
+<span class="sd">    :ivar conditioned_on: Whether the circuit is applied when the controlling</span>
+<span class="sd">        qubit is in the :math:`|1\\rangle` state or the :math:`|0\\rangle`</span>
+<span class="sd">        state. Defaults to True, meaning that the circuit is applied when the</span>
+<span class="sd">        controlling qubit is in the :math:`|1\\rangle` state.</span>
+<span class="sd">    :vartype conditioned_on: bool, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">circuit</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">conditioned_on</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;C-&quot;</span> <span class="o">+</span> <span class="n">circuit</span><span class="o">.</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="s1">&#39;c&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">circuit</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span> <span class="o">=</span> <span class="n">circuit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conditioned_on</span> <span class="o">=</span> <span class="n">conditioned_on</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+<div class="viewcode-block" id="ControlledCircuit.tree_string"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ControlledCircuit.tree_string">[docs]</a>    <span class="k">def</span> <span class="nf">tree_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="n">indentation</span> <span class="o">=</span> <span class="n">indent</span> <span class="o">*</span> <span class="n">INDENT</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">indentation</span> <span class="o">+</span> <span class="s2">&quot;Conditioned on:</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conditioned_on</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="o">.</span><span class="n">tree_string</span><span class="p">(</span><span class="n">indent</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="n">indentation</span> <span class="o">+</span> <span class="s2">&quot;End of control</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">s</span></div>
+
+<div class="viewcode-block" id="ControlledCircuit.adjoint"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ControlledCircuit.adjoint">[docs]</a>    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ControlledCircuit</span><span class="p">(</span><span class="o">~</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="p">),</span> <span class="n">conditioned_on</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conditioned_on</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return True if the circuit is valid.</span>
+
+<span class="sd">        See :attr:`Circuit.shape` for ways a circuit can be invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="o">.</span><span class="n">is_valid</span></div>
+
+
+<div class="viewcode-block" id="Controlled"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Controlled">[docs]</a><span class="k">def</span> <span class="nf">Controlled</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">conditioned_on</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a controlled version of the given operation.</span>
+
+<span class="sd">    When the given operation is not applied, the identity gate is applied, which</span>
+<span class="sd">    means the operation must have the same input and output qubits. The</span>
+<span class="sd">    operation also needs to be pure in order for quantum control to be</span>
+<span class="sd">    well-defined, which means it must be a unitary. However, it can be either</span>
+<span class="sd">    an :class:`ImmutableOperation` or a :class:`Circuit`.</span>
+
+<span class="sd">    :param operation: The quantum operation being controlled.</span>
+<span class="sd">    :type operation: Operation</span>
+
+<span class="sd">    :param name: Name of the resulting controlled operation. Defaults to</span>
+<span class="sd">        &quot;C-&lt;operation&gt;&quot;, where &lt;operation&gt; is the operation being controlled.</span>
+<span class="sd">    :type name: str, optional</span>
+
+<span class="sd">    :param conditioned_on: Whether the operation is applied when the controlling</span>
+<span class="sd">        qubit is in the :math:`|1\\rangle` state or the :math:`|0\\rangle`</span>
+<span class="sd">        state. Defaults to True, meaning that the operation is applied when the</span>
+<span class="sd">        controlling qubit is in the :math:`|1\\rangle` state.</span>
+<span class="sd">    :type conditioned_on: bool, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;C</span><span class="si">{}</span><span class="s2">-&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">conditioned_on</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">is_pure</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="s1">&#39;io&#39;</span> <span class="ow">or</span> <span class="n">x</span> <span class="o">==</span> <span class="s1">&#39;c&#39;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">operation</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Controlled unitary must be unitary&quot;</span><span class="p">)</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="s1">&#39;c&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="n">len_qubits</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">len_cbits</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">_indices_with_property</span><span class="p">(</span><span class="s2">&quot;^c$&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">Circuit</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ControlledCircuit</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">conditioned_on</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">tensor_control</span><span class="o">.</span><span class="n">contract</span><span class="p">()</span>
+        <span class="n">tn</span> <span class="o">=</span> <span class="n">TensorNetwork</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_qubits</span><span class="p">):</span>
+            <span class="n">tn</span><span class="o">.</span><span class="n">open_edge</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_cbits</span><span class="p">,</span> <span class="n">len_qubits</span><span class="p">):</span>
+            <span class="n">tn</span><span class="o">.</span><span class="n">open_edge</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">identity</span> <span class="o">=</span> <span class="n">tn</span><span class="o">.</span><span class="n">contract</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">conditioned_on</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ControlledOperation</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">identity</span><span class="p">,</span> <span class="n">data</span><span class="p">)),</span> <span class="n">shape</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ControlledOperation</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">identity</span><span class="p">)),</span> <span class="n">shape</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SuperPosition"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.SuperPosition">[docs]</a><span class="k">class</span> <span class="nc">SuperPosition</span><span class="p">(</span><span class="n">Operation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for a superposition of multiple pure operations.</span>
+
+<span class="sd">    :ivar operations: A list of operations in the superposition.</span>
+<span class="sd">    :vartype operations: List[Operation]</span>
+
+<span class="sd">    :ivar coefs: A list of coefficients, corresponding to each of the component</span>
+<span class="sd">        operations. By default, all the coefficients are 1.</span>
+<span class="sd">    :vartype coefs: List[float], optional</span>
+
+<span class="sd">    :ivar name: Name of the superposition operation. Defaults to &quot;SuperPos&quot;.</span>
+<span class="sd">    :vartype name: str, optional</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">operations</span><span class="p">,</span>
+                 <span class="n">coefs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s1">&#39;SuperPos&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">coefs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">coefs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">operations</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coefs</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">operations</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: length of components does not match length of coefficients&quot;</span><span class="p">)</span>
+        <span class="n">Operation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">input_indices</span> <span class="o">=</span> <span class="n">operations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_input_indices</span>
+        <span class="n">output_indices</span> <span class="o">=</span> <span class="n">operations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_output_indices</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">operations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">operations</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">_input_indices</span> <span class="o">!=</span> <span class="n">input_indices</span><span class="p">)</span>\
+               <span class="ow">or</span> <span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">_output_indices</span> <span class="o">!=</span> <span class="n">output_indices</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: components have incompatible shape&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">op</span><span class="o">.</span><span class="n">is_pure</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid superposition: all components must be pure&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">shape</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span>
+                    <span class="n">shape</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;io&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span> <span class="o">=</span> <span class="n">coefs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">operations</span> <span class="o">=</span> <span class="n">operations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_pure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the operation is a pure operation.</span>
+
+<span class="sd">        A :class:`SuperPosition` object is always pure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="SuperPosition.adjoint"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.SuperPosition.adjoint">[docs]</a>    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">SuperPosition</span><span class="p">([</span><span class="o">~</span><span class="n">op</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations</span><span class="p">],</span>
+                             <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coefs</span><span class="p">),</span>
+                             <span class="s2">&quot;~&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="XXRotation"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.XXRotation">[docs]</a><span class="k">def</span> <span class="nf">XXRotation</span><span class="p">(</span><span class="n">angle</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a two-qubit XX rotation gate in the form of</span>
+<span class="sd">    :math:`e^{i\\theta(X\\otimes X)}`, also known as an Ising gate.</span>
+
+<span class="sd">    :param angle: The rotation angle :math:`\\theta`.</span>
+<span class="sd">    :type angle: float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">SuperPosition</span><span class="p">([</span><span class="n">IGate</span> <span class="o">*</span> <span class="n">IGate</span><span class="p">,</span> <span class="n">XGate</span> <span class="o">*</span> <span class="n">XGate</span><span class="p">],</span>
+                         <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1</span><span class="n">j</span><span class="p">],</span>
+                         <span class="s1">&#39;R_XX(</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ZZRotation"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ZZRotation">[docs]</a><span class="k">def</span> <span class="nf">ZZRotation</span><span class="p">(</span><span class="n">angle</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a two-qubit ZZ rotation gate in the form of</span>
+<span class="sd">    :math:`e^{i\\theta(Z\\otimes Z)}`.</span>
+
+<span class="sd">    :param angle: The rotation angle :math:`\\theta`.</span>
+<span class="sd">    :type angle: float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Diagonal</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">angle</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">angle</span><span class="p">)],</span>
+                              <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">angle</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">angle</span><span class="p">)]]),</span>
+                    <span class="s1">&#39;R_ZZ(</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">acqdp.circuit.circuit</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Alibaba Quantum Laboratory.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,303 @@
+
+
+<!doctype html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>acqdp.tensor_network.local_optimizer &#8212; Alibaba Cloud Quantum Development Platform 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/bizstyle.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">acqdp.tensor_network.local_optimizer</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for acqdp.tensor_network.local_optimizer</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">acqdp.tensor_network.contraction</span> <span class="kn">import</span> <span class="n">OrderCounter</span><span class="p">,</span> <span class="n">ContractionCost</span>
+<span class="kn">import</span> <span class="nn">opt_einsum</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">ORDER_RESOLVER_KWARGS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;optimal&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;dp&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s1">&#39;thres&#39;</span><span class="p">:</span> <span class="mf">1e8</span><span class="p">}</span>
+
+
+<span class="k">class</span> <span class="nc">OrderResolver</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Interfaces for conveniently converting between different formats of contraction orders. Also serves as a converter from non-pairwise contraction orders to pairwise contraction orders.</span>
+
+<span class="sd">    :ivar optimal: The maximum number of tensors in a single step of a non-pairwise order, for which brute-force search is used to reconstruct the pairwise order.</span>
+<span class="sd">    :ivar dp: The maximum number of tensors in a single step of a non-pairwise order, for which dynamic programming is used to reconstruct the pairwise order.</span>
+<span class="sd">    :ivar thres: The minimum cost of a non-pairwise contraction order via default path to invoke more advanced search for a pairwise order, such as the `dp` or `optimal` methods.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">optimal</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+                 <span class="n">dp</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                 <span class="n">thres</span><span class="o">=</span><span class="mf">1e8</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimal</span> <span class="o">=</span> <span class="n">optimal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dp</span> <span class="o">=</span> <span class="n">dp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thres</span> <span class="o">=</span> <span class="n">thres</span>
+
+    <span class="k">def</span> <span class="nf">order_to_contraction_scheme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="n">subscripts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_to_subscripts</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+        <span class="n">cost</span> <span class="o">=</span> <span class="n">ContractionCost</span><span class="p">()</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="n">OrderCounter</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+        <span class="n">new_order</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">o</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">subscripts</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscript_to_path</span><span class="p">(</span><span class="o">*</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">new_order</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_to_paired_order</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">counter</span><span class="p">)</span>
+                <span class="n">cost</span> <span class="o">+=</span> <span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">raise</span> <span class="n">e</span>
+        <span class="kn">from</span> <span class="nn">acqdp.tensor_network</span> <span class="kn">import</span> <span class="n">ContractionScheme</span>
+        <span class="k">return</span> <span class="n">ContractionScheme</span><span class="p">(</span><span class="n">new_order</span><span class="p">,</span> <span class="n">cost</span><span class="o">=</span><span class="n">cost</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">order_to_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="n">tn_copy</span> <span class="o">=</span> <span class="n">tn</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">tn_copy</span><span class="o">.</span><span class="n">fix</span><span class="p">()</span>
+        <span class="n">edges_list</span> <span class="o">=</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">edges_by_name</span>
+        <span class="n">nodes_list</span> <span class="o">=</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">nodes_by_name</span>
+        <span class="n">lhs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">opt_einsum</span><span class="o">.</span><span class="n">get_symbol</span><span class="p">(</span><span class="n">edges_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">nodes</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">)][</span><span class="s1">&#39;edges&#39;</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes_list</span>
+        <span class="p">]</span>
+        <span class="n">rhs</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">opt_einsum</span><span class="o">.</span><span class="n">get_symbol</span><span class="p">(</span><span class="n">edges_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">open_edges</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">order</span><span class="p">:</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="n">nodes_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">nodes_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">))</span>
+            <span class="n">nodes_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">))</span>
+            <span class="n">nodes_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">))</span>
+            <span class="n">nodes_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-&gt;&#39;</span> <span class="o">+</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="p">{</span>
+            <span class="n">opt_einsum</span><span class="o">.</span><span class="n">get_symbol</span><span class="p">(</span><span class="n">edges_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">e</span><span class="p">)):</span> <span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">edges_list</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">order_to_subscripts_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">acqdp.tensor_network.contraction_tree</span> <span class="kn">import</span> <span class="n">ContractionTree</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">ContractionTree</span><span class="o">.</span><span class="n">from_order</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tree</span><span class="o">.</span><span class="n">full_subscripts</span><span class="p">,</span> <span class="n">tree</span><span class="o">.</span><span class="n">full_order</span>
+
+    <span class="k">def</span> <span class="nf">order_to_subscripts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="n">tn_copy</span> <span class="o">=</span> <span class="n">tn</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">subs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">order</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">stn</span> <span class="o">=</span> <span class="n">tn_copy</span><span class="o">.</span><span class="n">encapsulate</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stn_name</span><span class="o">=</span><span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">subs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stn</span><span class="o">.</span><span class="n">subscripts</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">e</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">order</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">subs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tn_copy</span><span class="o">.</span><span class="n">subscripts</span><span class="p">(</span><span class="n">order</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">subs</span>
+
+    <span class="k">def</span> <span class="nf">print_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="n">subs</span><span class="p">,</span> <span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_to_subscripts_tree</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sub</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">subs</span><span class="p">):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Step </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">: &lt;</span><span class="si">{</span><span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="o">+</span><span class="n">c</span><span class="o">+</span><span class="n">d</span><span class="si">}</span><span class="s1">&gt; </span><span class="si">{</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1">] * </span><span class="si">{</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1">] -&gt; </span><span class="si">{</span><span class="n">sub</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1">] </span><span class="se">\n</span><span class="s1"> </span><span class="si">{</span><span class="n">order</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">subscript_to_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">shapes</span><span class="p">):</span>
+        <span class="n">optimize</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">path</span><span class="p">,</span> <span class="n">path_info</span> <span class="o">=</span> <span class="n">opt_einsum</span><span class="o">.</span><span class="n">contract_path</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-&gt;&#39;</span> <span class="o">+</span> <span class="n">rhs</span><span class="p">,</span>
+                                                    <span class="o">*</span><span class="n">shapes</span><span class="p">,</span>
+                                                    <span class="n">shapes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                    <span class="n">optimize</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-&gt;&#39;</span> <span class="o">+</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">shapes</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">path_info</span><span class="o">.</span><span class="n">opt_cost</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">thres</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimal</span><span class="p">:</span>
+                <span class="n">optimize</span> <span class="o">=</span> <span class="s1">&#39;optimal&#39;</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dp</span><span class="p">:</span>
+                <span class="n">optimize</span> <span class="o">=</span> <span class="s1">&#39;dp&#39;</span>
+        <span class="k">if</span> <span class="n">optimize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span><span class="p">,</span> <span class="n">path_info</span> <span class="o">=</span> <span class="n">opt_einsum</span><span class="o">.</span><span class="n">contract_path</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-&gt;&#39;</span> <span class="o">+</span> <span class="n">rhs</span><span class="p">,</span>
+                                                    <span class="o">*</span><span class="n">shapes</span><span class="p">,</span>
+                                                    <span class="n">shapes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                    <span class="n">optimize</span><span class="o">=</span><span class="n">optimize</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">path</span><span class="p">,</span> <span class="n">ContractionCost</span><span class="p">(</span><span class="n">path_info</span><span class="o">.</span><span class="n">opt_cost</span><span class="p">,</span>
+                                     <span class="n">path_info</span><span class="o">.</span><span class="n">largest_intermediate</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">path_to_paired_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">counter</span><span class="p">):</span>
+        <span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">order</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">order</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># print(lhs, rhs)</span>
+        <span class="n">new_order</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="p">[[[</span><span class="n">lhs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])],</span> <span class="n">rhs</span><span class="p">]]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">new_order</span><span class="o">.</span><span class="n">append</span><span class="p">([[</span><span class="n">lhs</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">lhs</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]]],</span> <span class="n">counter</span><span class="o">.</span><span class="n">cnt</span><span class="p">])</span>
+                    <span class="n">lhs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                    <span class="n">lhs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                    <span class="n">lhs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_order</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">IndexError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">order</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">i</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">e</span>
+        <span class="n">new_order</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">rhs</span>
+        <span class="k">return</span> <span class="n">new_order</span>
+
+
+<span class="n">defaultOrderResolver</span> <span class="o">=</span> <span class="n">OrderResolver</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="LocalOptimizer"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.LocalOptimizer">[docs]</a><span class="k">class</span> <span class="nc">LocalOptimizer</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    :class:`LocalOptimizer` takes a pairwise contraction tree and do local optimization on the tree. Note that a connected subgraph of the contraction tree represents a sequence of intermediate steps that take some (potentially intermediate) tensors as input, and outputs a later intermediate tensor. This sequence of steps can be optimized based on solely the shapes of the input and output tensors associated to the subgraph, without looking at the rest of the contraction tree. This allows local reorganization of the tree.</span>
+
+<span class="sd">    Each iteration of local optimization consists of two steps: In the first step, the contraction tree is divided into non-overlapping subgraphs each up to a given size, with the internal connections in the subgraphs removed. The internal connections are then reconstructed in the second phase using accelerated optimum contraction tree finding approach. The iterations can be repeated by each time randomly selecting a different patch of subgraph division.</span>
+
+<span class="sd">    :ivar size: The maximum number of nodes to be included in one subgraph.</span>
+<span class="sd">    :ivar resolver: The resolver to help reconstruct the pairwise order from subgraph divisions.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">size</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolver</span> <span class="o">=</span> <span class="n">OrderResolver</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;resolver_params&#39;</span><span class="p">,</span> <span class="p">{}))</span>
+
+    <span class="k">def</span> <span class="nf">_flatten_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">tn_copy</span> <span class="o">=</span> <span class="n">tn</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">tn_copy</span><span class="o">.</span><span class="n">fix</span><span class="p">()</span>
+        <span class="n">size_dic</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">cnt_offset</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">subs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolver</span><span class="o">.</span><span class="n">order_to_subscripts</span><span class="p">(</span><span class="n">tn_copy</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">o</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+            <span class="n">size_dic</span><span class="p">[</span><span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">subs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">size_dic</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">subs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+        <span class="n">cnt</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">while</span> <span class="o">-</span><span class="n">cnt</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+            <span class="n">rhs_list</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">o</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">order</span><span class="p">[:</span><span class="n">cnt</span><span class="p">]):</span>
+                <span class="n">rhs_list</span><span class="p">[</span><span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">o</span> <span class="o">=</span> <span class="n">order</span><span class="p">[</span><span class="n">cnt</span><span class="p">]</span>
+            <span class="n">lhs</span> <span class="o">=</span> <span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+                <span class="n">cnt</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
+            <span class="c1"># choose the largest tensor</span>
+            <span class="n">sizes</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">size_dic</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">]}</span>
+            <span class="n">largest_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">sizes</span><span class="p">[</span><span class="n">x</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">largest_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">l</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rhs_list</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">sizes</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">rhs_list</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">cnt_offset</span> <span class="o">&lt;</span> <span class="n">offset</span><span class="p">:</span>
+                    <span class="n">cnt_offset</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+                    <span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">rhs_list</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">order</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">rhs_list</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cnt</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">order</span>
+
+    <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">num_iter</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iter</span><span class="p">):</span>
+            <span class="n">new_order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_order</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span>
+                                           <span class="n">order</span><span class="o">.</span><span class="n">order</span><span class="p">,</span>
+                                           <span class="n">offset</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolver</span><span class="o">.</span><span class="n">order_to_contraction_scheme</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="n">new_order</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">order</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">acqdp.tensor_network.local_optimizer</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Alibaba Quantum Laboratory.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

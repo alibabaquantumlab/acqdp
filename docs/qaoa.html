@@ -1,0 +1,467 @@
+
+
+<!doctype html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demo: The Quantum Approximate Optimization Algorithm (QAOA) &#8212; Alibaba Cloud Quantum Development Platform 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/bizstyle.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Demo: Simulating the Sycamore random quantum circuits" href="sycamore.html" />
+    <link rel="prev" title="acqdp.circuit package" href="acqdp.circuit.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sycamore.html" title="Demo: Simulating the Sycamore random quantum circuits"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="acqdp.circuit.html" title="acqdp.circuit package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Demo: The Quantum Approximate Optimization Algorithm (QAOA)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="demo-the-quantum-approximate-optimization-algorithm-qaoa">
+<h1>Demo: The Quantum Approximate Optimization Algorithm (QAOA)<a class="headerlink" href="#demo-the-quantum-approximate-optimization-algorithm-qaoa" title="Permalink to this headline">¶</a></h1>
+<p>Quantum Approximate Optimization Algorithms (QAOA) were invented by Edward Farhi, Jeffrey Goldstone and Sam Gutmann <a class="reference internal" href="#fgg" id="id1"><span>[FGG]</span></a>
+with the goal to efficiently solve NP optimization problems on a quantum computer. Their inspiration came from methods for finding
+minimum energy states of quantum systems. In this page, we demonstrate an easy application of the ACQDP to classically simulate QAOA with the sole purpose of promoting research on QAOA.
+It will <em>not</em> out-perform algorithms run on powerful quantum machines or even
+compete with fine-tuned classical algorithms. Rather than explaining the inspiration coming from physics, this tutorial we will be mostly concerned with the practical task of describing how to run our QAOA simulator and how to solve problems
+with it. In the appendix we give some insight into what algorithm the simulator uses and how it is related to quantum circuits. The relevant source codes, including a demo, can be found in <cite>demo.QAOA</cite>.</p>
+<div class="section" id="weighted-constraint-satisfaction-problems-wcsp">
+<h2>Weighted Constraint Satisfaction Problems (WCSP)<a class="headerlink" href="#weighted-constraint-satisfaction-problems-wcsp" title="Permalink to this headline">¶</a></h2>
+<p>QAOA is a quantum-classical optimizer (a so-called Variational Quantum Eigensolver) for WCSP problems.
+Our software classically simulates the QAOA process.
+WCSP is a large class of NP hard combinatorial optimization problems that, among many others, includes:</p>
+<ul class="simple">
+<li><p>MAX-CUT,</p></li>
+<li><p>MAX-<span class="math notranslate nohighlight">\(k\)</span>-SAT,</p></li>
+<li><p>MAX-INDEPENDENT-SET,</p></li>
+<li><p>QUBO</p></li>
+</ul>
+<p>General WCSP:</p>
+<p><span class="math notranslate nohighlight">\({\rm Find\;  an} \; x\in \{0,1\}^{n}\; {\rm such \; that}  \;\;\; F(x) \; = \; \sum_{h\in {\cal H}} T_{h}(x_{h(0)},\ldots,x_{h(k-1)}) \;\; \mbox{is minimized}\)</span></p>
+<p>where <span class="math notranslate nohighlight">\({\cal H}\)</span> is a directed hyper-graph on the node-set <span class="math notranslate nohighlight">\(\{0,1,\ldots,n-1\}\)</span>.
+For every hyper-edge <span class="math notranslate nohighlight">\(h\in {\cal H}\)</span> there is a label, <span class="math notranslate nohighlight">\(T_{h}\)</span>, which is a multi-dimensional array.</p>
+<p>Example: Hyper edge <span class="math notranslate nohighlight">\(h=(0,2,3)\)</span>; Label <span class="math notranslate nohighlight">\(T_h=[[[0,1],[-1,2]],[[-2,1][-1,2]],[[1,1],[-2,1]],[[-1,1],[-2,0]]]\)</span>.</p>
+<p>If a hyper edge <span class="math notranslate nohighlight">\(h\)</span> is a <span class="math notranslate nohighlight">\(k\)</span>-tuple, the corresponding label, <span class="math notranslate nohighlight">\(T_{h}\)</span>, must be a <span class="math notranslate nohighlight">\(k\)</span>-dimensional array of the shape <span class="math notranslate nohighlight">\([\underbrace{2,2,\ldots,2}_{k}]\)</span>. Different <span class="math notranslate nohighlight">\(h\)</span> s may have different <span class="math notranslate nohighlight">\(k\)</span> s.</p>
+<p>Example (WCSP instance)</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 63%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Directed Hyper-Graph</p></th>
+<th class="head"><p>Labels</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>edge <span class="math notranslate nohighlight">\(h_0=(0,4)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(T_{h_0}=[[0,-4],[-4,0]]\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>edge <span class="math notranslate nohighlight">\(h_1=(1,3)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(T_{h_1}=[[0,-3],[-3,0]]\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>edge <span class="math notranslate nohighlight">\(h_2=(2,4)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(T_{h_2}=[[0,-4],[-4,0]]\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\({\cal H}=(\{0,1,2,3,4\},\{h_0,h_1,h_2\})\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(F(x) = T_{h_{0}}[x_{0},x_{4}] + T_{h_{1}}[x_{1},x_{3}] + T_{h_{2}}[x_{2},x_{4}]\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p><span class="math notranslate nohighlight">\(F(0,0,1,1,1) = -4 - 3 + 0 = -7\)</span>; A minimum assignment is <span class="math notranslate nohighlight">\((0,0,0,1,1)\)</span> with value <span class="math notranslate nohighlight">\(-11\)</span>.</p>
+</div>
+<div class="section" id="inputting-a-wcsp-instance">
+<h2>Inputting a WCSP instance<a class="headerlink" href="#inputting-a-wcsp-instance" title="Permalink to this headline">¶</a></h2>
+<p>We represent a WCSP instance as a python dictionary:</p>
+<p>WCSP instance = {tuple: numpy.array, tuple: numpy.array, …, tuple: numpy.array}</p>
+<p>For instance, the instance in the previous paragraph can be expressed as:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">w</span> <span class="o">=</span> <span class="p">{</span>   <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">4</span><span class="p">],[</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span>
+        <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">],[</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span>
+        <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">4</span><span class="p">],[</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span> <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-the-qaoa-solver">
+<h2>Running the QAOA solver<a class="headerlink" href="#running-the-qaoa-solver" title="Permalink to this headline">¶</a></h2>
+<p>The running of our QAOA simulator involves the following steps:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 43%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>steps</p></th>
+<th class="head"><p>codes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Define an instance:</p></td>
+<td><p>w = … #as in the previous paragraph</p></td>
+</tr>
+<tr class="row-odd"><td><p>Instantiate a QAOA solver:</p></td>
+<td><p>b = QAOAOptimizer(w, num_layers=3)</p></td>
+</tr>
+<tr class="row-even"><td><p>Run a preprocessing routine:</p></td>
+<td><p>b.preprocess()</p></td>
+</tr>
+<tr class="row-odd"><td><p>Run the optimization:</p></td>
+<td><p>b.optimize()</p></td>
+</tr>
+</tbody>
+</table>
+<p>The final program will look something like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">demo.QAOA.qaoa</span> <span class="kn">import</span> <span class="n">QAOAOptimizer</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="n">w</span> <span class="o">=</span> <span class="p">{</span>   <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">4</span><span class="p">],[</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span>
+        <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">],[</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span>
+        <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">4</span><span class="p">],[</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span> <span class="p">}</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">QAOAOptimizer</span><span class="p">(</span><span class="n">w</span><span class="p">,</span><span class="n">num_layers</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">b</span><span class="o">.</span><span class="n">preprocess</span><span class="p">()</span>
+<span class="n">b</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>When we run this program (after placing it into the appropriate directory) we see a bunch of messages printed out
+that are generated by the subroutines that are directly or indirectly called by <em>optimize()</em>.
+We can safely disregard of these. In the very end finally we see the final result for optimization:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="o">-</span><span class="mf">10.999998650035163</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span><span class="mf">2.61991258</span><span class="p">,</span> <span class="mf">0.98324141</span><span class="p">,</span> <span class="mf">5.7771099</span> <span class="p">,</span> <span class="mf">1.1527771</span> <span class="p">,</span> <span class="mf">4.63022803</span><span class="p">,</span> <span class="mf">4.04327891</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>The first value, <cite>-10.999998650035163</cite>, is the output of the optimization algorithm. The subsequent array is the so-called <em>angle sequence</em> of the QAOA instance, indicating a quantum circuit that prepares random assignments with expectation of the WCSP close to -11.</p>
+</div>
+<div class="section" id="handling-errors">
+<h2>Handling Errors<a class="headerlink" href="#handling-errors" title="Permalink to this headline">¶</a></h2>
+<p>If the WCSP instance on which you run the QAOA is not in the right format strange errors will result. To avoid this to happen we have installed a checkinstance() routine, which reverals the type of the instance-error. For instance:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">w</span><span class="o">=</span><span class="kc">None</span>
+<span class="n">qaoa</span><span class="o">.</span><span class="n">checkinstance</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>gives the output:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>Instance has to be a dictionary and it has type &lt;class `NoneType`&gt;
+</pre></div>
+</div>
+<p>and</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">w</span><span class="o">=</span><span class="p">{(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])}</span>
+<span class="n">qaoa</span><span class="o">.</span><span class="n">checkinstance</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>gives the output</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Label</span> <span class="n">of</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="n">has</span> <span class="n">the</span> <span class="n">shape</span> <span class="p">(</span><span class="mi">2</span><span class="p">,)</span> <span class="n">Must</span> <span class="n">have</span> <span class="n">shape</span><span class="p">:</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The routine checkinstance(w) returns non-zero if w is not a valid instance. One may write:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">qaoa</span><span class="o">.</span><span class="n">checkinstance</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">exit</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>A user who is only interested in the application of QAOA to general WCSP problems <strong>can stop reading the tutorial here</strong>.
+For those who want to understand the above lines of code and QAOA a bit deeper should <strong>go to the Appendix</strong>.
+As a last example before the Appendix we show how to program <strong>QUBO problems</strong>, which are special WCSP problems.</p>
+</div>
+<div class="section" id="qubo-definition">
+<h2>QUBO, Definition<a class="headerlink" href="#qubo-definition" title="Permalink to this headline">¶</a></h2>
+<p>A Quadratic Unconstrained Binary Optimization problem is
+<span class="math notranslate nohighlight">\({\rm Minimize}\;\; \sum_{i=0}^{n-1} c_{i} x_{i} \; + \; \sum_{i=0}^{n-1}\sum_{j=0}^{i-1} Q_{i,j} x_{i} x_{j} \;\;\; \;\;\; \;\;\; x_{i}\in\{0,1\}\;\; {\rm for}\; 0\le i \le n-1\)</span>.</p>
+</div>
+<div class="section" id="solving-a-qubo-problem">
+<h2>Solving a QUBO problem<a class="headerlink" href="#solving-a-qubo-problem" title="Permalink to this headline">¶</a></h2>
+<p>Assume we have a QUBO problem with parameters</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 63%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>parameters</p></th>
+<th class="head"><p>meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(c_{i}\)</span> (<span class="math notranslate nohighlight">\(0\le i \le n-1\)</span>)</p></td>
+<td><p>stored as a python array c</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(Q_{i,j}\)</span> <span class="math notranslate nohighlight">\((i,j) \in G\)</span></p></td>
+<td><p>stored as a python dictionary Q;</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>keys to Q are pairs, stored in G</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>if a <span class="math notranslate nohighlight">\(0\le i&lt;j&lt;n\)</span> pair is not present in G: <span class="math notranslate nohighlight">\(Q_{i,j} = 0\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>By adding the following lines of code we can turn this into a WCSP instance:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">w</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">w</span><span class="p">[(</span><span class="n">i</span><span class="p">,)]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">G</span><span class="p">:</span>
+    <span class="n">w</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="n">Q</span><span class="p">[</span><span class="n">item</span><span class="p">]]])</span>
+</pre></div>
+</div>
+<p>We can also generate a WCSP instance directly from a small QUBO instance as in the following
+code for <span class="math notranslate nohighlight">\(x_{1}-2x_{2}-3x_{3} + x_{1}x_{2}-7x_{1}x_{3} -10 x_{2}x_{3}\)</span>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">demo.QAOA</span> <span class="kn">import</span> <span class="n">qaoa</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="n">w</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<span class="n">w</span><span class="p">[(</span><span class="mi">0</span><span class="p">,)]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">w</span><span class="p">[(</span><span class="mi">1</span><span class="p">,)]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">w</span><span class="p">[(</span><span class="mi">2</span><span class="p">,)]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
+<span class="n">w</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="n">w</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">)]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">7</span><span class="p">]])</span>
+<span class="n">w</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">10</span><span class="p">]])</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">qaoa</span><span class="o">.</span><span class="n">QAOAOptimizer</span><span class="p">(</span><span class="n">w</span><span class="p">,</span><span class="n">num_layers</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">b</span><span class="o">.</span><span class="n">preprocess</span><span class="p">()</span>
+<span class="n">b</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The relevant part of the output is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="o">-</span><span class="mf">18.38432904303106</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span> <span class="mf">3.85113221</span><span class="p">,</span>  <span class="mf">1.75534297</span><span class="p">,</span>  <span class="mf">5.58459208</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.95758014</span><span class="p">,</span>  <span class="mf">2.57251745</span><span class="p">,</span>
+    <span class="mf">0.85227267</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>(The result could be different from this particular run due to randomness of the starting point.) The optimal value can be found by calling</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">b</span><span class="o">.</span><span class="n">optimum</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>and the result would be</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="appendix">
+<h2>Appendix<a class="headerlink" href="#appendix" title="Permalink to this headline">¶</a></h2>
+<p><strong>The QAOAOptimizer class</strong>. This is our central class for QAOA optimization, which,
+among others contains the <em>optimize</em> method. When we create an instance of this class, we need to
+enter the WCSP instance <em>w</em> we want to optimize as the first argument.</p>
+<p><em>Number of layers:</em> To understand the second argument, <em>num_layers=3</em>, more familiarity with QAOA is needed:
+From a WCSP instance <span class="math notranslate nohighlight">\(F\)</span>, the QAOA algorithm creates a quantum circuit <span class="math notranslate nohighlight">\({\cal C}\)</span> on <span class="math notranslate nohighlight">\(n\)</span> qubits,
+where <span class="math notranslate nohighlight">\(n\)</span> is the number of variables in <span class="math notranslate nohighlight">\(F\)</span>. The number of layers refers to the number of layers
+in this circuit. If the number of layers is <span class="math notranslate nohighlight">\(p\)</span>, circuit <span class="math notranslate nohighlight">\({\cal C}\)</span> is composed of <span class="math notranslate nohighlight">\(p\)</span>
+simpler circuits, each of which depends only on <span class="math notranslate nohighlight">\(F\)</span> and two real parameters.
+Since the instance is fixed, we do not indicate the dependence on <span class="math notranslate nohighlight">\(F\)</span>.
+The composition is written in the customary operator-product notation
+(as a convention, operators act from the right to the left):</p>
+<p><span class="math notranslate nohighlight">\({\cal C}(\beta_{0},\gamma_{0},\ldots , \beta_{p-1},\gamma_{p-1})\; = \; {\cal B}(\beta_{p-1},\gamma_{p-1})\cdots {\cal B}(\beta_{0},\gamma_{0})\)</span></p>
+<p>This circuit serves to create a state</p>
+<p><span class="math notranslate nohighlight">\(\psi(\beta_{0},\gamma_{0},\ldots , \beta_{p-1},\gamma_{p-1}) \; = \; {\cal C}(\beta_{0},\gamma_{0},\ldots , \beta_{p-1},\gamma_{p-1})\; |+\rangle^{n}\)</span>
+from the standard initial state</p>
+<p><span class="math notranslate nohighlight">\(|+\rangle^{n} = {1\over \sqrt{2^{n}}} |0\cdots 0\rangle + \cdots + {1\over \sqrt{2^{n}}} |1\cdots 1\rangle\)</span>.</p>
+<p>The goal is to set the parameters so that <span class="math notranslate nohighlight">\(\psi(\beta_{0},\gamma_{0},\ldots , \beta_{p-1},\gamma_{p-1})\)</span> have large amplitudes on those <span class="math notranslate nohighlight">\(x\in (0,1)^{n}\)</span> for which
+<span class="math notranslate nohighlight">\(F(x)\)</span> is small:</p>
+<div class="math notranslate nohighlight">
+\[\psi_{x}(\beta_{0},\gamma_{0},\ldots , \beta_{p-1},\gamma_{p-1})\;\;\;\;\mbox{is large where $F(x)$ is small}\;\;\; (x\in \{0,1\}^{n}).\]</div>
+<p>The QAOA algorithm is a black box optimizer. The fitness of <span class="math notranslate nohighlight">\(\psi(\beta_{0},\gamma_{0},\ldots , \beta_{p-1},\gamma_{p-1})\)</span> is expressed in the single real number</p>
+<p><span class="math notranslate nohighlight">\({\rm Energy}(\beta_{0},\gamma_{0},\ldots , \beta_{p-1},\gamma_{p-1}) = \sum_{x\in (0,1)^{n}} |\psi_{x}(\beta_{0},\gamma_{0},\ldots , \beta_{p-1},\gamma_{p-1}) |^{2} \cdot F(x)\)</span></p>
+<p>Similarly to deep
+learning, we iteratively compute <span class="math notranslate nohighlight">\({\rm Energy}(\beta_{0},\gamma_{0},\ldots , \beta_{p-1},\gamma_{p-1})\)</span>, and in each round we improve on the parameters
+until we arrive at the best setting, <span class="math notranslate nohighlight">\((\beta_{0}^{*},\gamma_{0}^{*},\ldots , \beta_{p-1}^{*},\gamma_{p-1}^{*})\)</span>.</p>
+<p><em>Layers:</em> For those, who are interested in even more details, we describe the structure of an individual
+layer, <span class="math notranslate nohighlight">\({\cal B}(\beta,\gamma)\)</span>. A layer is an <span class="math notranslate nohighlight">\(n\)</span> qubit quantum circuit. Therefore it is a (linear) unitary operator, i.e. a one that
+takes an <span class="math notranslate nohighlight">\(n\)</span>-qubit quantum state into an <span class="math notranslate nohighlight">\(n\)</span>-qubit quantum state. This operator can be written
+as a product of local operators (<em>local</em> here meaning acting on a small number of qubits). Each
+term in this product is one of two types.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}{\rm WCSP-term-rotation:}  &amp; \;\;\;\;\;\;&amp; R_T(\gamma) : \; |x\rangle \longrightarrow e^{-i\gamma \, T(x)} |x\rangle \;\;\;\;\; {\rm for}\; x\in \{0,1\}^{k} \\
+{\rm X-rotation:}    &amp; \;\;\;\;\;\;&amp;  X(\beta) : \;
+\left\{
+\begin{array}{lll}
+|0\rangle &amp;  \longrightarrow  &amp; \cos \beta \;  |0\rangle - i \sin \beta \; |1\rangle \\
+|1\rangle &amp;  \longrightarrow  &amp; - i \sin \beta \;  |0\rangle + \cos \beta \;  |1\rangle
+\end{array}\right.`\end{split}\]</div>
+<p>Both types are very simple. Any WCSP-term-rotation is diagonal, meaning that it acts on any basis state <span class="math notranslate nohighlight">\(|x\rangle\)</span> as a multiplication with a scalar, depending on <span class="math notranslate nohighlight">\(x\)</span>.
+The X-rotation is a one qubit gate, which <em>diffuses</em> the bit, depending on angle <span class="math notranslate nohighlight">\(\beta\)</span>.
+A layer consists of first applying term-rotations corresponding to all terms of <span class="math notranslate nohighlight">\(F\)</span> (on the state coming from the previous layer), followed by diffusing all bits.
+In formula:</p>
+<div class="math notranslate nohighlight">
+\[{\cal B}(\beta,\gamma) = \; \underbrace{X^{(1)}(\beta)\cdots X^{(n)}(\beta)}_{\rm commute} \;
+\underbrace{R_{T_{h_1}}^{(h_1)}(\gamma)\cdots R_{T_{h_m}}^{(h_m)}(\gamma)}_{\rm commute}\]</div>
+<p>In the super-script we have indicated the qubit or set of qubits on which a gate acts. When we have a set of commuting gates, it means that the order in which we apply them does not matter.</p>
+</div>
+<div class="section" id="preprocessing-and-optimizing">
+<h2>Preprocessing and Optimizing<a class="headerlink" href="#preprocessing-and-optimizing" title="Permalink to this headline">¶</a></h2>
+<p>We explain the reason why to call <em>preprocess</em> before we call <em>optimize</em>. Recall that QAOA
+is a black box optimizer for <span class="math notranslate nohighlight">\({\rm Energy}(\beta_{0},\gamma_{0},\ldots, \beta_{p-1},\gamma_{p-1})\)</span>.
+Python provides a simple black box optimization tool which only requires to specify the the black box procedure.
+But what if some pre-calculation makes <em>all</em> calls to the black box procedure easier?</p>
+<p>preprocess is a procedure executed <em>before</em> making any call to <span class="math notranslate nohighlight">\({\rm Energy}\)</span>.
+The reason for the existence of a parameter-independent speed-up is that
+in order to compute <span class="math notranslate nohighlight">\({\rm Energy}(\beta_{0},\gamma_{0},\ldots, \beta_{p-1},\gamma_{p-1})\)</span>
+we apply the Markov-Shi <a class="reference internal" href="#ms" id="id2"><span>[MS]</span></a> tensor network contraction algorithm, which requires to specify a contraction order.
+Picking the right contraction order has a tremendous effect on the running time and to find the best one
+is very time consuming. Luckily, once we have found a good one, it works for all parameter values.
+This is exactly what our <em>preprocess</em> does: it finds this efficient order.</p>
+</div>
+<div class="section" id="sampling">
+<h2>Sampling<a class="headerlink" href="#sampling" title="Permalink to this headline">¶</a></h2>
+<p>After running <em>preprocess</em> and <em>optimize</em> we end up with
+a circuit <span class="math notranslate nohighlight">\({\cal C}(\beta_{0}^{*},\gamma_{0}^{*},\ldots , \beta_{p-1}^{*},\gamma_{p-1}^{*})\)</span>, but we still have a task to do:</p>
+<blockquote>
+<div><p>Sample <span class="math notranslate nohighlight">\(x\)</span> from the distribution <span class="math notranslate nohighlight">\(\{ |\psi_{x}(\beta_{0}^{*},\gamma_{0}^{*},\ldots , \beta_{p-1}^{*},\gamma_{p-1}^{*}) |^{2} \}_{x\in \{0,1\}^{n}}\)</span></p>
+</div></blockquote>
+<p>This task is easy with a quantum computer: we run <span class="math notranslate nohighlight">\({\cal C}(\beta_{0}^{*},\gamma_{0}^{*},\ldots , \beta_{p-1}^{*},\gamma_{p-1}^{*})\)</span> (a polynomial size quantum circuit) on initial state <span class="math notranslate nohighlight">\(|+\rangle^{n}\)</span>, and measure every bit of the output. There is no known efficient classical algorithm for sampling from the output distribution as efficiently as doing the optimization, and a sampling algorithm is not included in the demo. Using a quantum computer to sample could greatly reduce the cost.</p>
+</div>
+<div class="section" id="fields-and-functions-in-the-qaoaoptimizer-class">
+<h2>Fields and Functions in the QAOAOptimizer Class<a class="headerlink" href="#fields-and-functions-in-the-qaoaoptimizer-class" title="Permalink to this headline">¶</a></h2>
+<p>For QAOA experiments one may want to access the following fields and functions of the
+QAOAOptimizer class:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 6%" />
+<col style="width: 94%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>csp</p></td>
+<td><p>The primary data of a class instance. It must hold a WCSP instance in the proper format discussed in the first paragraphs of the tutorial.</p></td>
+</tr>
+<tr class="row-even"><td><p>lst_var</p></td>
+<td><p>A list of all variables of the WCPS instance, sorted</p></td>
+</tr>
+<tr class="row-odd"><td><p>num_layers</p></td>
+<td><p>Defines the number of layers, <span class="math notranslate nohighlight">\(p\)</span>, of the QAOA Ansatz</p></td>
+</tr>
+<tr class="row-even"><td><p>params</p></td>
+<td><p>Holds a sequence of <span class="math notranslate nohighlight">\(2p\)</span> real parameters, where <span class="math notranslate nohighlight">\(p\)</span> is the <em>num_layers</em> in the order <span class="math notranslate nohighlight">\([\gamma_{1},\ldots,\gamma_{p},\beta_{1},\ldots,\beta_{p}]\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>query(params)</p></td>
+<td><p>Returns the energy of a wave created by a QAOA circuit with parameters <em>params</em> for <em>b.csp</em> Default parameter set is <em>b.params</em></p></td>
+</tr>
+<tr class="row-even"><td><p>energy(a)</p></td>
+<td><p>The value (<cite>energy</cite>) of an assignment <em>a</em>. An assignment is represented as an array, for instance,  <span class="math notranslate nohighlight">\(a = [0,1,1,0,1,1]\)</span>. The length of <em>a</em> must match the number of variables of the <em>b.csp</em> instance.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>The optimum solution.</strong> The goal of QAOA is to optimize a WCSP instance. In the presumed quantum era QAOA methods will likely to beat classical methods. Currently however, solving a WCSP problem is much quicker with classical methods than with QAOA. Further, QAOA only gives a sequence of assignments that are close to, but not necessarily minimal. In contrast,  <em>optimum()</em> gives a single assignment with the <em>exact</em> minimum value: <span class="math notranslate nohighlight">\(b.optimum() = \min_s b.energy(s)\)</span>.</p>
+<p><strong>The angle sequence.</strong> As we have said, every instance <em>b</em> of the QAOAOptimizer class has a degree sequence of length <span class="math notranslate nohighlight">\(2p\)</span>
+stored in the <em>params</em> field. This field is initialized by the command</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">params</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">num_layers</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <em>optimize()</em> routine has the effect of changing the <em>param</em> array to the parameters to an optimal QAOA Ansatz with the given <em>num_layers</em>,
+denoted earlier by <span class="math notranslate nohighlight">\((\beta_{1}^{*},\gamma_{1}^{*},\ldots , \beta_{p}^{*},\gamma_{p}^{*})\)</span>.</p>
+<div class="section" id="references">
+<h3>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h3>
+<dl class="citation">
+<dt class="label" id="fgg"><span class="brackets"><a class="fn-backref" href="#id1">FGG</a></span></dt>
+<dd><p>Edward Farhi, Jeffrey Goldstone and Sam Gutmann, <em>A quantum approximate optimization algorithm</em>, arXiv preprint arXiv:1411.4028, 2014.</p>
+</dd>
+<dt class="label" id="ms"><span class="brackets"><a class="fn-backref" href="#id2">MS</a></span></dt>
+<dd><p>Igor L Markov and Yaoyun Shi, <em>Simulating quantum computation by contracting tensor networks</em>, SIAM Journal on Computing, 38(3), 963–981, 2008.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Demo: The Quantum Approximate Optimization Algorithm (QAOA)</a><ul>
+<li><a class="reference internal" href="#weighted-constraint-satisfaction-problems-wcsp">Weighted Constraint Satisfaction Problems (WCSP)</a></li>
+<li><a class="reference internal" href="#inputting-a-wcsp-instance">Inputting a WCSP instance</a></li>
+<li><a class="reference internal" href="#running-the-qaoa-solver">Running the QAOA solver</a></li>
+<li><a class="reference internal" href="#handling-errors">Handling Errors</a></li>
+<li><a class="reference internal" href="#qubo-definition">QUBO, Definition</a></li>
+<li><a class="reference internal" href="#solving-a-qubo-problem">Solving a QUBO problem</a></li>
+<li><a class="reference internal" href="#appendix">Appendix</a></li>
+<li><a class="reference internal" href="#preprocessing-and-optimizing">Preprocessing and Optimizing</a></li>
+<li><a class="reference internal" href="#sampling">Sampling</a></li>
+<li><a class="reference internal" href="#fields-and-functions-in-the-qaoaoptimizer-class">Fields and Functions in the QAOAOptimizer Class</a><ul>
+<li><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="acqdp.circuit.html"
+                        title="previous chapter">acqdp.circuit package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="sycamore.html"
+                        title="next chapter">Demo: Simulating the Sycamore random quantum circuits</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/qaoa.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sycamore.html" title="Demo: Simulating the Sycamore random quantum circuits"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="acqdp.circuit.html" title="acqdp.circuit package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Demo: The Quantum Approximate Optimization Algorithm (QAOA)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Alibaba Quantum Laboratory.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>
