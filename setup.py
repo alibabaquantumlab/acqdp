@@ -12,19 +12,20 @@ try:
     zip_safe = False
 except ImportError:
     print('Installing QDP without Cython...')
+
     def cythonize(*args, **kwargs):
         return []
 
 setup(
     name='acqdp',
-    version='0.1.0',
+    version='0.1.1',
     description='Alibaba Cloud Quantum Development Platform',
-    long_description = long_description,
+    long_description=long_description,
     long_description_content_type='text/markdown',
     author='Alibaba Quantum Lab',
     author_email='aql_software@alibabacloud.com',
     license='MIT',
-    url='https://github.com/alibabaquantumlab/acqdp',
+    url='https://github.com/alibaba/acqdp',
     packages=find_packages(include=['acqdp*']),
     package_data={'acqdp': ['*.ini', '*.json']},
     include_package_data=True,
