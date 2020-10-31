@@ -54,14 +54,15 @@
 
 
 <span class="k">class</span> <span class="nc">OrderResolver</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Interfaces for conveniently converting between different formats of contraction orders. Also serves as a</span>
+<span class="sd">    converter from non-pairwise contraction orders to pairwise contraction orders.</span>
 
-<span class="sd">    Interfaces for conveniently converting between different formats of contraction orders. Also serves as a converter from non-pairwise contraction orders to pairwise contraction orders.</span>
-
-<span class="sd">    :ivar optimal: The maximum number of tensors in a single step of a non-pairwise order, for which brute-force search is used to reconstruct the pairwise order.</span>
-<span class="sd">    :ivar dp: The maximum number of tensors in a single step of a non-pairwise order, for which dynamic programming is used to reconstruct the pairwise order.</span>
-<span class="sd">    :ivar thres: The minimum cost of a non-pairwise contraction order via default path to invoke more advanced search for a pairwise order, such as the `dp` or `optimal` methods.</span>
-
+<span class="sd">    :ivar optimal: The maximum number of tensors in a single step of a non-pairwise order, for which brute-force search is</span>
+<span class="sd">        used to reconstruct the pairwise order.</span>
+<span class="sd">    :ivar dp: The maximum number of tensors in a single step of a non-pairwise order, for which dynamic programming is used</span>
+<span class="sd">        to reconstruct the pairwise order.</span>
+<span class="sd">    :ivar thres: The minimum cost of a non-pairwise contraction order via default path to invoke more advanced search for a</span>
+<span class="sd">        pairwise order, such as the `dp` or `optimal` methods.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
@@ -144,7 +145,8 @@
             <span class="n">c</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
             <span class="n">d</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">sub</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
             <span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">&#39;Step </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">: &lt;</span><span class="si">{</span><span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="o">+</span><span class="n">c</span><span class="o">+</span><span class="n">d</span><span class="si">}</span><span class="s1">&gt; </span><span class="si">{</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1">] * </span><span class="si">{</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1">] -&gt; </span><span class="si">{</span><span class="n">sub</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1">] </span><span class="se">\n</span><span class="s1"> </span><span class="si">{</span><span class="n">order</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;Step </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">: &lt;</span><span class="si">{</span><span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="o">+</span><span class="n">c</span><span class="o">+</span><span class="n">d</span><span class="si">}</span><span class="s1">&gt; </span><span class="si">{</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1">] * </span><span class="si">{</span><span class="n">sub</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1">]&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39; -&gt; </span><span class="si">{</span><span class="n">sub</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1"> x </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1">] </span><span class="se">\n</span><span class="s1"> </span><span class="si">{</span><span class="n">order</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
 
@@ -152,9 +154,9 @@
         <span class="n">optimize</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">path</span><span class="p">,</span> <span class="n">path_info</span> <span class="o">=</span> <span class="n">opt_einsum</span><span class="o">.</span><span class="n">contract_path</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-&gt;&#39;</span> <span class="o">+</span> <span class="n">rhs</span><span class="p">,</span>
-                                                    <span class="o">*</span><span class="n">shapes</span><span class="p">,</span>
-                                                    <span class="n">shapes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                                    <span class="n">optimize</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">)</span>
+                                                       <span class="o">*</span><span class="n">shapes</span><span class="p">,</span>
+                                                       <span class="n">shapes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                       <span class="n">optimize</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-&gt;&#39;</span> <span class="o">+</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">shapes</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">e</span>
@@ -165,9 +167,9 @@
                 <span class="n">optimize</span> <span class="o">=</span> <span class="s1">&#39;dp&#39;</span>
         <span class="k">if</span> <span class="n">optimize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">path</span><span class="p">,</span> <span class="n">path_info</span> <span class="o">=</span> <span class="n">opt_einsum</span><span class="o">.</span><span class="n">contract_path</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-&gt;&#39;</span> <span class="o">+</span> <span class="n">rhs</span><span class="p">,</span>
-                                                    <span class="o">*</span><span class="n">shapes</span><span class="p">,</span>
-                                                    <span class="n">shapes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                                    <span class="n">optimize</span><span class="o">=</span><span class="n">optimize</span><span class="p">)</span>
+                                                       <span class="o">*</span><span class="n">shapes</span><span class="p">,</span>
+                                                       <span class="n">shapes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                       <span class="n">optimize</span><span class="o">=</span><span class="n">optimize</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">path</span><span class="p">,</span> <span class="n">ContractionCost</span><span class="p">(</span><span class="n">path_info</span><span class="o">.</span><span class="n">opt_cost</span><span class="p">,</span>
                                      <span class="n">path_info</span><span class="o">.</span><span class="n">largest_intermediate</span><span class="p">)</span>
 
@@ -197,9 +199,16 @@
 <div class="viewcode-block" id="LocalOptimizer"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.LocalOptimizer">[docs]</a><span class="k">class</span> <span class="nc">LocalOptimizer</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="sd">    :class:`LocalOptimizer` takes a pairwise contraction tree and do local optimization on the tree. Note that a connected subgraph of the contraction tree represents a sequence of intermediate steps that take some (potentially intermediate) tensors as input, and outputs a later intermediate tensor. This sequence of steps can be optimized based on solely the shapes of the input and output tensors associated to the subgraph, without looking at the rest of the contraction tree. This allows local reorganization of the tree.</span>
+<span class="sd">    :class:`LocalOptimizer` takes a pairwise contraction tree and do local optimization on the tree. Note that a connected</span>
+<span class="sd">        subgraph of the contraction tree represents a sequence of intermediate steps that take some (potentially intermediate)</span>
+<span class="sd">        tensors as input, and outputs a later intermediate tensor. This sequence of steps can be optimized based on solely the</span>
+<span class="sd">        shapes of the input and output tensors associated to the subgraph, without looking at the rest of the contraction</span>
+<span class="sd">        tree. This allows local reorganization of the tree.</span>
 
-<span class="sd">    Each iteration of local optimization consists of two steps: In the first step, the contraction tree is divided into non-overlapping subgraphs each up to a given size, with the internal connections in the subgraphs removed. The internal connections are then reconstructed in the second phase using accelerated optimum contraction tree finding approach. The iterations can be repeated by each time randomly selecting a different patch of subgraph division.</span>
+<span class="sd">    Each iteration of local optimization consists of two steps: In the first step, the contraction tree is divided into</span>
+<span class="sd">    non-overlapping subgraphs each up to a given size, with the internal connections in the subgraphs removed. The internal</span>
+<span class="sd">    connections are then reconstructed in the second phase using accelerated optimum contraction tree finding approach. The</span>
+<span class="sd">    iterations can be repeated by each time randomly selecting a different patch of subgraph division.</span>
 
 <span class="sd">    :ivar size: The maximum number of nodes to be included in one subgraph.</span>
 <span class="sd">    :ivar resolver: The resolver to help reconstruct the pairwise order from subgraph divisions.</span>
@@ -254,9 +263,9 @@
     <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">num_iter</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iter</span><span class="p">):</span>
             <span class="n">new_order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_order</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span>
-                                           <span class="n">order</span><span class="o">.</span><span class="n">order</span><span class="p">,</span>
-                                           <span class="n">offset</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
-                                               <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+                                            <span class="n">order</span><span class="o">.</span><span class="n">order</span><span class="p">,</span>
+                                            <span class="n">offset</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
             <span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolver</span><span class="o">.</span><span class="n">order_to_contraction_scheme</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="n">new_order</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">order</span></div>
 </pre></div>
@@ -276,7 +285,11 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script><h3>See Also</h3>
+<ul>
+<li><a href="https://github.com/alibaba/acqdp">Source code on Github</a></li>
+<li><a href="https://pypi.org/project/acqdp/">PyPI Project</a></li>
+</ul>
         </div>
       </div>
       <div class="clearer"></div>

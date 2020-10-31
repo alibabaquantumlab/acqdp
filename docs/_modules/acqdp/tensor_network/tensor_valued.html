@@ -45,15 +45,13 @@
           <div class="body" role="main">
             
   <h1>Source code for acqdp.tensor_network.tensor_valued</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">numpy</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">contractor</span>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span>
 
 <span class="n">DTYPE</span> <span class="o">=</span> <span class="nb">complex</span>
 
+
 <span class="k">def</span> <span class="nf">conjugate</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;TensorValued&#39;</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Return the complex conjugation of a `TensorValued` object.</span>
+    <span class="sd">&quot;&quot;&quot;Return the complex conjugation of a `TensorValued` object.</span>
 
 <span class="sd">    :returns:  :class:`TensorValued` -- the conjugation of a `TensorValued` object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -81,13 +79,14 @@
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">TensorView</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">TensorView</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">transpose</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">axes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;TensorNetwork&#39;</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Return the transposition of a `TensorValued` object.</span>
+
+<span class="k">def</span> <span class="nf">transpose</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">axes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;TensorValued&#39;</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Return the transposition of a `TensorValued` object.</span>
 
 <span class="sd">    :param axes: the transposition on the referred object.</span>
 <span class="sd">    :type axes: tuple.</span>
-<span class="sd">    :returns:  :class:`TensorNetwork` -- the transposition of a `TensorValued` object can be readily expressed in terms of a `TensorNetwork` object.</span>
+<span class="sd">    :returns:  :class:`TensorNetwork` -- the transposition of a `TensorValued` object can be readily expressed in terms of a</span>
+<span class="sd">        `TensorNetwork` object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">.tensor_network</span> <span class="kn">import</span> <span class="n">TensorNetwork</span>
     <span class="n">tn</span> <span class="o">=</span> <span class="n">TensorNetwork</span><span class="p">()</span>
@@ -95,19 +94,20 @@
     <span class="n">tn</span><span class="o">.</span><span class="n">open_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">tn</span><span class="o">.</span><span class="n">open_edges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">tn</span>
 
+
 <span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">tv</span><span class="p">:</span> <span class="s1">&#39;TensorValued&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;TensorValued&#39;</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Return a copy with unit Frobenius norm.</span>
+    <span class="sd">&quot;&quot;&quot;Return a copy with unit Frobenius norm.</span>
 
 <span class="sd">    :param tv: The :class:`TensorValued` object to normalize.</span>
 <span class="sd">    :type tv: :class:`TensorValued`.</span>
 <span class="sd">    :returns:  :class:`TensorValued` -- the normalized :class:`TensorValued` object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">tv</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">tv</span><span class="o">.</span><span class="n">norm_squared</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">tv</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">tv</span><span class="o">.</span><span class="n">norm_squared</span><span class="p">))</span>
+
 
 <div class="viewcode-block" id="TensorValued"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.TensorValued">[docs]</a><span class="k">class</span> <span class="nc">TensorValued</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Interface for all :class:`TensorValued` objects, including :class:`Tensor`, :class:`TensorNetwork`, :class:`TensorSum` and :class:`TensorView`.</span>
+    <span class="sd">&quot;&quot;&quot;Interface for all :class:`TensorValued` objects, including :class:`Tensor`, :class:`TensorNetwork`,</span>
+<span class="sd">    :class:`TensorSum` and :class:`TensorView`.</span>
 
 <span class="sd">    :ivar identifier: unique identifier for each :class:`TensorValued` object.</span>
 <span class="sd">    :ivar dtype: A :class:`TensorValued` object is homogeneous, and contains elements described by a dtype object.</span>
@@ -125,10 +125,13 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The common property of all :class:`TensorValued` classes, indicating whether the bond dimensions for a tensor valued object. A tensor valued object is semantically a multi-dimensionally array, and its dimensions can be expressed as a tuple of integers. The tuple is called the shape of the tensor, whereas the length of the tuple is the rank of the tensor.</span>
+        <span class="sd">&quot;&quot;&quot;The common property of all :class:`TensorValued` classes, indicating whether the bond dimensions for a tensor</span>
+<span class="sd">        valued object. A tensor valued object is semantically a multi-dimensionally array, and its dimensions can be</span>
+<span class="sd">        expressed as a tuple of integers. The tuple is called the shape of the tensor, whereas the length of the tuple</span>
+<span class="sd">        is the rank of the tensor.</span>
 
-<span class="sd">        In ACQDP, undetermined tensors and undetermined dimensions are allowed. In the former case, the shape of the tensor will return `None`; in the latter case, some of the bond_dimensions appearing in the tuple could be `None`.</span>
+<span class="sd">        In ACQDP, undetermined tensors and undetermined dimensions are allowed. In the former case, the shape of the tensor</span>
+<span class="sd">        will return `None`; in the latter case, some of the bond_dimensions appearing in the tuple could be `None`.</span>
 
 <span class="sd">        :returns: :class:`tuple` or None</span>
 <span class="sd">        :raises: NotImplementedError, ValueError</span>
@@ -137,9 +140,9 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The common property of all :class:`TensorValued` classes, indicating whether the :class:`TensorValued` object is valid or not.</span>
-<span class="sd">        In every step of a program, all existing :class:`TensorValued` object must be valid, otherwise an exception should be thrown out.</span>
+        <span class="sd">&quot;&quot;&quot;The common property of all :class:`TensorValued` classes, indicating whether the :class:`TensorValued` object</span>
+<span class="sd">        is valid or not. In every step of a program, all existing :class:`TensorValued` object must be valid, otherwise</span>
+<span class="sd">        an exception should be thrown out.</span>
 
 <span class="sd">        :returns: :class:`bool`</span>
 <span class="sd">        :raises: NotImplementedError</span>
@@ -148,10 +151,10 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">is_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The common property of all :class:`TensorValued` classes, indicating whether the current :class:`TensorValued` object is ready for</span>
-<span class="sd">        contraction, i.e. whether it semantically represents a tensor with a definite value.</span>
-<span class="sd">        A `TensorValued` object needs to be ready upon contraction, but needs not to be ready throught the construction.</span>
+        <span class="sd">&quot;&quot;&quot;The common property of all :class:`TensorValued` classes, indicating whether the current</span>
+<span class="sd">        :class:`TensorValued` object is ready for contraction, i.e. whether it semantically represents a tensor with a</span>
+<span class="sd">        definite value. A `TensorValued` object needs to be ready upon contraction, but needs not to be ready throught</span>
+<span class="sd">        the construction.</span>
 
 <span class="sd">        :returns: :class:`bool`</span>
 <span class="sd">        :raises: NotImplementedError()</span>
@@ -175,11 +178,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;TensorNetwork&#39;</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Tensor product of two tensors. For tensor multiplications, use</span>
-<span class="sd">        `TensorNetwork` classes to specify how indices are to be contracted.</span>
-<span class="sd">        By default, addition creates a `TensorNetwork` object with two operands as two components.</span>
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;TensorValued&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Tensor product of two tensors. For tensor multiplications, use `TensorNetwork` classes to specify how indices</span>
+<span class="sd">        are to be contracted. By default, addition creates a `TensorNetwork` object with two operands as two components.</span>
 
 <span class="sd">        :returns: :class:`TensorNetwork`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -192,9 +193,10 @@
     <span class="fm">__rmul__</span> <span class="o">=</span> <span class="fm">__mul__</span>
 
     <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s1">&#39;TensorValued&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;TensorValued&#39;</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Addition of two `TensorValued` objects.</span>
-<span class="sd">        By default, addition creates a `TensorSum` object with two operands as two components. The two operands of the addition must have compatible shapes.</span>
+        <span class="sd">&quot;&quot;&quot;Addition of two `TensorValued` objects.</span>
+
+<span class="sd">        By default, addition creates a `TensorSum` object with two operands as two components. The two operands of the</span>
+<span class="sd">        addition must have compatible shapes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">.tensor_sum</span> <span class="kn">import</span> <span class="n">TensorSum</span>
         <span class="n">tl</span> <span class="o">=</span> <span class="n">TensorSum</span><span class="p">()</span>
@@ -220,9 +222,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">norm_squared</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Square of Frobenius norm of the :class:`TensorValued` object.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Square of Frobenius norm of the :class:`TensorValued` object.&quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">.tensor_network</span> <span class="kn">import</span> <span class="n">TensorNetwork</span>
         <span class="n">tn</span> <span class="o">=</span> <span class="n">TensorNetwork</span><span class="p">()</span>
         <span class="n">tn</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">tensor</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
@@ -230,9 +230,8 @@
         <span class="k">return</span> <span class="n">tn</span><span class="o">.</span><span class="n">contract</span><span class="p">()</span><span class="o">.</span><span class="n">real</span>
 
 <div class="viewcode-block" id="TensorValued.fix_index"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.TensorValued.fix_index">[docs]</a>    <span class="k">def</span> <span class="nf">fix_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">fix_to</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;TensorValued&#39;</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Fix the given index to the given value. The result :class:`TensorValued` object would have the same type as the original one, with rank 1 smaller</span>
-<span class="sd">        than the original.</span>
+        <span class="sd">&quot;&quot;&quot;Fix the given index to the given value. The result :class:`TensorValued` object would have the same type as</span>
+<span class="sd">        the original one, with rank 1 smaller than the original.</span>
 
 <span class="sd">        :param index: The index to fix.</span>
 <span class="sd">        :type index: :class:`int`</span>
@@ -244,15 +243,14 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
     <span class="k">def</span> <span class="nf">expand</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Expand nested tensor network structures in the :class:`TensorValued` object if there is any.</span>
+        <span class="sd">&quot;&quot;&quot;Expand nested tensor network structures in the :class:`TensorValued` object if there is any.</span>
+
 <span class="sd">        :returns: :class:`TensorValued`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span>
 
 <div class="viewcode-block" id="TensorValued.contract"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.TensorValued.contract">[docs]</a>    <span class="k">def</span> <span class="nf">contract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Evaluate the :class:`TensorValued` object to a :class:`numpy.ndarray`.</span>
+        <span class="sd">&quot;&quot;&quot;Evaluate the :class:`TensorValued` object to a :class:`numpy.ndarray`.</span>
 
 <span class="sd">        :returns: :class:`numpy.ndarray`</span>
 <span class="sd">        :raises: NotImplementedError</span>
@@ -260,14 +258,14 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="TensorValued.cast"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.TensorValued.cast">[docs]</a>    <span class="k">def</span> <span class="nf">cast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Cast the tensor valued object to a new underlying dtype.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Cast the tensor valued object to a new underlying dtype.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span></div>
 
     <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;TensorValued&#39;</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Make a copy of the current object. Data is duplicated only when</span>
-<span class="sd">        necessary.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Make a copy of the current object.</span>
+
+<span class="sd">        Data is duplicated only when necessary.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;TensorValued&#39;</span><span class="p">:</span>
@@ -290,7 +288,11 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script><h3>See Also</h3>
+<ul>
+<li><a href="https://github.com/alibaba/acqdp">Source code on Github</a></li>
+<li><a href="https://pypi.org/project/acqdp/">PyPI Project</a></li>
+</ul>
         </div>
       </div>
       <div class="clearer"></div>

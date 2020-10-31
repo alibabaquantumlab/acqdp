@@ -45,19 +45,7 @@
           <div class="body" role="main">
             
   <h1>Source code for acqdp.tensor_network.order_finder</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">subprocess</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">string</span>
-<span class="kn">import</span> <span class="nn">random</span>
-<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
-<span class="kn">import</span> <span class="nn">itertools</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">opt_einsum</span>
-<span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">cmp_to_key</span>
-<span class="kn">from</span> <span class="nn">acqdp.tensor_network.contraction</span> <span class="kn">import</span> <span class="n">ContractionScheme</span>
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">acqdp.tensor_network.local_optimizer</span> <span class="kn">import</span> <span class="n">defaultOrderResolver</span>
 
 <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
@@ -68,31 +56,37 @@
 <div class="viewcode-block" id="OrderFinder"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.OrderFinder">[docs]</a><span class="k">class</span> <span class="nc">OrderFinder</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    :class:`OrderFinder` class is dedicated to finding a contraction scheme corresponding to a given tensor network structure.</span>
-<span class="sd">    The main method of an :class:`OrderFinder` is `find_order`, which takes a `TensorNetwork` as input, and yields a generator of `ContractionScheme`.</span>
-<span class="sd">    The base class offers preliminary order finding schemes. For more advanced hypergraph-based approach, use :class:`KHPOrderFinder`. For finding contraction schemes with sliced edges, use :class:`SlicedOrderFinder`.</span>
+<span class="sd">        The main method of an :class:`OrderFinder` is `find_order`, which takes a `TensorNetwork` as input, and yields a</span>
+<span class="sd">        generator of `ContractionScheme`.The base class offers preliminary order finding schemes. For more advanced</span>
+<span class="sd">        hypergraph-based approach, use :class:`KHPOrderFinder`. For finding contraction schemes with sliced edges,</span>
+<span class="sd">        use :class:`SlicedOrderFinder`.</span>
 
-<span class="sd">    :ivar order_method: &#39;default&#39; order contracts the tensor one by one by order; &#39;vertical&#39; order contracts the tensor based on the vertical ordering. When the tensor network is from a quantum circuit, the vertical order corresponds to the tensor network contraction where the tensors connected to a qubit is first contracted together and then merged to a main one according to a given order of the qubits.</span>
+<span class="sd">    :ivar order_method: &#39;default&#39; order contracts the tensor one by one by order; &#39;vertical&#39; order contracts the tensor based</span>
+<span class="sd">        on the vertical ordering. When the tensor network is from a quantum circuit, the vertical order corresponds to the</span>
+<span class="sd">        tensor network contraction where the tensors connected to a qubit is first contracted together and then merged to a</span>
+<span class="sd">        main one according to a given order of the qubits.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">order_method</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">order_method</span> <span class="o">=</span> <span class="n">order_method</span>
 
 <div class="viewcode-block" id="OrderFinder.find_order"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.OrderFinder.find_order">[docs]</a>    <span class="k">def</span> <span class="nf">find_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Find a contraction scheme for the input tensor network subject to the constraints given in the :class:`OrderFinder`.</span>
+        <span class="sd">&quot;&quot;&quot;Find a contraction scheme for the input tensor network subject to the constraints given in the</span>
+<span class="sd">        :class:`OrderFinder`.</span>
 
 <span class="sd">        :param tn: A tensor network for which the contraction scheme is to be determined.</span>
 <span class="sd">        :type tn: :class:`TensorNetwork`</span>
-<span class="sd">        :yields: A :class:`ContractionScheme` containing the pairwise contraction order, a list of edges to be sliced, and optionally the total contraction cost.</span>
-
+<span class="sd">        :yields: A :class:`ContractionScheme` containing the pairwise contraction order, a list of edges to be sliced, and</span>
+<span class="sd">            optionally the total contraction cost.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tn</span> <span class="o">=</span> <span class="n">tn</span><span class="o">.</span><span class="n">_expand_and_delta</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_method</span> <span class="o">==</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span>
-            <span class="n">a</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="n">b</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="n">b</span>  <span class="c1"># noqa: E731</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_method</span> <span class="o">==</span> <span class="s1">&#39;vertical&#39;</span><span class="p">:</span>
             <span class="n">qubit_order</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;qubit_order&#39;</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">tn</span><span class="o">.</span><span class="n">nodes_by_name</span><span class="p">)))</span>
-            <span class="n">a</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="p">(</span><span class="n">qubit_order</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="p">(</span><span class="n">qubit_order</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>  <span class="c1"># noqa: E731</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;order method not implemented&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -115,11 +109,14 @@
 
 <div class="viewcode-block" id="SlicedOrderFinder"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.SlicedOrderFinder">[docs]</a><span class="k">class</span> <span class="nc">SlicedOrderFinder</span><span class="p">(</span><span class="n">OrderFinder</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    :class: `SlicedOrderFinder` finds a sliced contraction scheme based on unsliced contraction schemes found by its base order finder.</span>
-<span class="sd">    :ivar base_order_finder: The base order finder of the sliced order finder, from which the `SlicedOrderFinder` fetches contraction schemes and do slicing on it.</span>
+<span class="sd">    :class: `SlicedOrderFinder` finds a sliced contraction scheme based on unsliced contraction schemes found by its base</span>
+<span class="sd">        order finder.</span>
+<span class="sd">    :ivar base_order_finder: The base order finder of the sliced order finder, from which the `SlicedOrderFinder` fetches</span>
+<span class="sd">        contraction schemes and do slicing on it.</span>
 <span class="sd">    :ivar slicer: The slicing algorithm acting upon the contraction schemes.</span>
 <span class="sd">    :ivar num_candidates: Number of unsliced contraction schemes to feed to the slicer at a time. Set to 20 by default.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">base_order_finder</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;order_finder_name&#39;</span><span class="p">:</span> <span class="s1">&#39;khp&#39;</span><span class="p">},</span>
                  <span class="n">slicer</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;slicer_name&#39;</span><span class="p">:</span> <span class="s1">&#39;default&#39;</span><span class="p">},</span>
@@ -168,7 +165,11 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script><h3>See Also</h3>
+<ul>
+<li><a href="https://github.com/alibaba/acqdp">Source code on Github</a></li>
+<li><a href="https://pypi.org/project/acqdp/">PyPI Project</a></li>
+</ul>
         </div>
       </div>
       <div class="clearer"></div>

@@ -20,7 +20,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Tutorial" href="tutorial.html" />
-    <link rel="prev" title="Welcome to Alibaba Cloud Quantum Development Platform (ACQDP)’s documentation!" href="index.html" />
+    <link rel="prev" title="Alibaba Cloud Quantum Development Platform (ACQDP) v0.1.1 documentation" href="index.html" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <!--[if lt IE 9]>
     <script src="_static/css3-mediaqueries.js"></script>
@@ -39,7 +39,7 @@
           <a href="tutorial.html" title="Tutorial"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to Alibaba Cloud Quantum Development Platform (ACQDP)’s documentation!"
+          <a href="index.html" title="Alibaba Cloud Quantum Development Platform (ACQDP) v0.1.1 documentation"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Overview</a></li> 
@@ -53,7 +53,13 @@
             
   <div class="section" id="overview">
 <span id="installation"></span><h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
-<p>Alibaba-Cloud Quantum Development Platform (ACQDP) is a quantum computing framework written in Python with the aim of realizing the potential of quantum computing in research, education and business.</p>
+<p>ACQDP is an open-source simulator-driven development tool for quantum algorithms and quantum computers. The initial release of ACQDP in October 2020 features Alibaba Quantum Laboratory’s general-purpose, tensor-contraction based  quantum circuit simulator, together with some applications on quantum algorithm and error correction simulations. Some future directions of ACQDP of higher prioritites are</p>
+<ol class="arabic simple">
+<li><p>Strengthening the capabilities of the simulator, in terms of the scale of the target circuits, and allowing approximations.</p></li>
+<li><p>Improving the capabilities for and expanding the scope of applications.</p></li>
+<li><p>Developing friendly user interfaces for both the educational and research communities.</p></li>
+<li><p>Adding utilities facilitating the deployment in various computing environments.</p></li>
+</ol>
 </div>
 <div class="section" id="id1">
 <h1>Installation<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
@@ -62,8 +68,7 @@
 <li><p><a class="reference internal" href="#prerequisites" id="id2">Prerequisites</a></p></li>
 <li><p><a class="reference internal" href="#installation-from-pypi" id="id3">Installation from PyPI</a></p></li>
 <li><p><a class="reference internal" href="#installation-from-source-code" id="id4">Installation from source code</a></p></li>
-<li><p><a class="reference internal" href="#installation-issues" id="id5">Installation Issues</a></p></li>
-<li><p><a class="reference internal" href="#example-and-test-codes" id="id6">Example and test codes</a></p></li>
+<li><p><a class="reference internal" href="#example-and-test-codes" id="id5">Example and test codes</a></p></li>
 </ul>
 </div>
 <div class="section" id="prerequisites">
@@ -74,6 +79,11 @@ In a command window, run</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install cython
 </pre></div>
 </div>
+<p><a class="reference external" href="https://www.boost.org">boost</a> - C++ boost library, particularly the <a class="reference external" href="https://www.boost.org/doc/libs/1_58_0/doc/html/program_options.html">program_options</a> library</p>
+<p><a class="reference external" href="https://kahypar.org">KaHyPar python package</a>  (Windows) - On non-Windows systems, it installs automatically
+when installing acqdp but it’ll error out on Windows. To make it work on Windows, you’ll need manually install Kahypar
+first following its instructions <a class="reference external" href="https://github.com/kahypar/kahypar#the-python-interface">here</a>. Alternatively, you
+can use <a class="reference external" href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">Windows Subsystem for Linux</a></p>
 </div>
 <div class="section" id="installation-from-pypi">
 <h2>Installation from PyPI<a class="headerlink" href="#installation-from-pypi" title="Permalink to this headline">¶</a></h2>
@@ -87,7 +97,7 @@ This is the recommended way for most users. However, if you’d like to see or m
 </div>
 <div class="section" id="installation-from-source-code">
 <h2>Installation from source code<a class="headerlink" href="#installation-from-source-code" title="Permalink to this headline">¶</a></h2>
-<p>Alternative, you can install from source code, say, cloned from <a class="reference external" href="https://github.com/alibaba/acqdp">Github</a> so you can see and modify the code.
+<p>Alternatively, you can install from source code, say, cloned from <a class="reference external" href="https://github.com/alibaba/acqdp">Github</a> so you can see and modify the code.
 First clone the repo</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/alibaba/acqdp
 </pre></div>
@@ -97,22 +107,12 @@ First clone the repo</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="installation-issues">
-<h2>Installation Issues<a class="headerlink" href="#installation-issues" title="Permalink to this headline">¶</a></h2>
-<p>If you are installing on Windows, you may encounter an error when one of its dependencies,
-<a class="reference external" href="https://pypi.org/project/kahypar">kahypar</a>, is being installed. This is a limitation of kahypar.
-You may try to build it from its source code follow instructions
-<a class="reference external" href="https://github.com/kahypar/kahypar#requirements">here</a></p>
-</div>
 <div class="section" id="example-and-test-codes">
 <h2>Example and test codes<a class="headerlink" href="#example-and-test-codes" title="Permalink to this headline">¶</a></h2>
-<p>You are ready to go! Find some examples at <a class="reference external" href="https://github.com/alibaba/acqdp/tree/master/examples">https://github.com/alibaba/acqdp/tree/master/examples</a></p>
-<p>To run the example in the examples folder examples/foo.py, run the following command in the home folder:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python examples/foo.py
-</pre></div>
-</div>
-<p>For example, we can run the script <cite>ghz.py</cite> in the examples folderby the following code:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python examples/ghz.py
+<p>You are ready to go! Find some examples at <a class="reference external" href="https://github.com/alibaba/acqdp/tree/master/examples">https://github.com/alibaba/acqdp/tree/master/examples</a> and
+<a class="reference external" href="https://github.com/alibaba/acqdp/tree/master/demo">https://github.com/alibaba/acqdp/tree/master/demo</a></p>
+<p>To run the example in the examples, for example <cite>GHZ.py</cite>, simply run the following command in the examples folder:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python examples/GHZ.py
 </pre></div>
 </div>
 <p>To see if the package passes all the tests, simply run <strong class="command">python -m pytest</strong>.</p>
@@ -133,7 +133,6 @@ You may try to build it from its source code follow instructions
 <li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
 <li><a class="reference internal" href="#installation-from-pypi">Installation from PyPI</a></li>
 <li><a class="reference internal" href="#installation-from-source-code">Installation from source code</a></li>
-<li><a class="reference internal" href="#installation-issues">Installation Issues</a></li>
 <li><a class="reference internal" href="#example-and-test-codes">Example and test codes</a></li>
 </ul>
 </li>
@@ -141,17 +140,10 @@ You may try to build it from its source code follow instructions
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
-                        title="previous chapter">Welcome to Alibaba Cloud Quantum Development Platform (ACQDP)’s documentation!</a></p>
+                        title="previous chapter">Alibaba Cloud Quantum Development Platform (ACQDP) v0.1.1 documentation</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="tutorial.html"
                         title="next chapter">Tutorial</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/installation.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
 <div id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
@@ -161,7 +153,11 @@ You may try to build it from its source code follow instructions
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script><h3>See Also</h3>
+<ul>
+<li><a href="https://github.com/alibaba/acqdp">Source code on Github</a></li>
+<li><a href="https://pypi.org/project/acqdp/">PyPI Project</a></li>
+</ul>
         </div>
       </div>
       <div class="clearer"></div>
@@ -179,7 +175,7 @@ You may try to build it from its source code follow instructions
           <a href="tutorial.html" title="Tutorial"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to Alibaba Cloud Quantum Development Platform (ACQDP)’s documentation!"
+          <a href="index.html" title="Alibaba Cloud Quantum Development Platform (ACQDP) v0.1.1 documentation"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Alibaba Cloud Quantum Development Platform 0.1 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Overview</a></li> 

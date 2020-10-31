@@ -135,8 +135,8 @@ will be connected correspondingly.</p>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.Operation.tensor_pure">
 <em class="property">property </em><code class="sig-name descname">tensor_pure</code><a class="headerlink" href="#acqdp.circuit.circuit.Operation.tensor_pure" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert the operation into a tensor network representing the action
-of the operation in the pure state picture.</p>
+<dd><p>Convert the operation into a tensor network representing the action of the operation in the pure state
+picture.</p>
 <p>Examples of tensor representations in the pure state picture include
 state vectors of pure states, and unitary matrices of unitary gates.</p>
 <p>Raises an error if the operation is not pure.</p>
@@ -145,21 +145,19 @@ state vectors of pure states, and unitary matrices of unitary gates.</p>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.Operation.tensor_density">
 <em class="property">property </em><code class="sig-name descname">tensor_density</code><a class="headerlink" href="#acqdp.circuit.circuit.Operation.tensor_density" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert the operation into a tensor network representing the action
-of the operation in the density matrix picture.</p>
-<p>Examples of tensor representations in the density matrix picture include
-density matrices of general quantum states, and Choi matrices of quantum
-operations. As a special case, when the operation is pure, the tensor
-network returned by <a class="reference internal" href="#acqdp.circuit.circuit.Operation.tensor_density" title="acqdp.circuit.circuit.Operation.tensor_density"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tensor_density</span></code></a> will consist of two disjoint
-components, one being the tensor network returned by <a class="reference internal" href="#acqdp.circuit.circuit.Operation.tensor_pure" title="acqdp.circuit.circuit.Operation.tensor_pure"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tensor_pure</span></code></a>
-and the other being its adjoint.</p>
+<dd><p>Convert the operation into a tensor network representing the action of the operation in the density matrix
+picture.</p>
+<p>Examples of tensor representations in the density matrix picture include density matrices of general quantum
+states, and Choi matrices of quantum operations. As a special case, when the operation is pure, the tensor
+network returned by <a class="reference internal" href="#acqdp.circuit.circuit.Operation.tensor_density" title="acqdp.circuit.circuit.Operation.tensor_density"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tensor_density</span></code></a> will consist of two disjoint components, one being the tensor network
+returned by <a class="reference internal" href="#acqdp.circuit.circuit.Operation.tensor_pure" title="acqdp.circuit.circuit.Operation.tensor_pure"><code class="xref py py-attr docutils literal notranslate"><span class="pre">tensor_pure</span></code></a> and the other being its adjoint.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.Operation.tensor_control">
 <em class="property">property </em><code class="sig-name descname">tensor_control</code><a class="headerlink" href="#acqdp.circuit.circuit.Operation.tensor_control" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert a controlled operation into a tensor network in the pure
-state picture, but with only one open edge for each controlling qubit.</p>
+<dd><p>Convert a controlled operation into a tensor network in the pure state picture, but with only one open edge
+for each controlling qubit.</p>
 <p>A qubit in an operation can be regarded as a controlling qubit if its
 value in the computational basis is never changed by the operation. As
 such, its input wire and output wire can be represented by the same edge
@@ -174,8 +172,8 @@ can be regarded as a controlling qubit. See <a class="reference internal" href="
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.Operation.adjoint">
 <code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Operation.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Operation.adjoint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
-<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+<dd><p>Return the adjoint of a quantum operation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of <code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -184,8 +182,7 @@ can be regarded as a controlling qubit. See <a class="reference internal" href="
 <dt id="acqdp.circuit.circuit.ImmutableOperation">
 <em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">ImmutableOperation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">numpy.ndarray</span></em>, <em class="sig-param"><span class="n">shape</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'ImOp'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ImmutableOperation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ImmutableOperation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.Operation</span></code></a></p>
-<p>Class for quantum operations with explicit tensor representations. The
-operation is not supposed to be modified.</p>
+<p>Class for quantum operations with explicit tensor representations. The operation is not supposed to be modified.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>data</strong> (<em>acqdp.tensor_network.tensor_valued.TensorValued</em><em> or </em><em>np.ndarray</em>) – A tensor representation of the operation. For this base class,
@@ -209,8 +206,7 @@ both.</p></li>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.ImmutableOperation.process">
 <code class="sig-name descname">process</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ImmutableOperation.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ImmutableOperation.process" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert the input data into an appropriately shaped tensor, and
-initialize the operation with this tensor.</p>
+<dd><p>Convert the input data into an appropriately shaped tensor, and initialize the operation with this tensor.</p>
 <p>A derived class that uses a different tensor representation of the
 operation should override this function in order to do shape checking
 and initialization correctly.</p>
@@ -375,8 +371,7 @@ need to use this function twice.</p>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.PureOperation.process">
 <code class="sig-name descname">process</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#PureOperation.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.PureOperation.process" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert the input data into an appropriately shaped tensor, and
-initialize the operation with this tensor.</p>
+<dd><p>Convert the input data into an appropriately shaped tensor, and initialize the operation with this tensor.</p>
 <p>A derived class that uses a different tensor representation of the
 operation should override this function in order to do shape checking
 and initialization correctly.</p>
@@ -392,8 +387,8 @@ and initialization correctly.</p>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.PureOperation.adjoint">
 <code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#PureOperation.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.PureOperation.adjoint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
-<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+<dd><p>Return the adjoint of a quantum operation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of <code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -485,8 +480,7 @@ False.</p></li>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.ControlledOperation.process">
 <code class="sig-name descname">process</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ControlledOperation.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ControlledOperation.process" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert the input data into an appropriately shaped tensor, and
-initialize the operation with this tensor.</p>
+<dd><p>Convert the input data into an appropriately shaped tensor, and initialize the operation with this tensor.</p>
 <p>A derived class that uses a different tensor representation of the
 operation should override this function in order to do shape checking
 and initialization correctly.</p>
@@ -502,8 +496,8 @@ and initialization correctly.</p>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.ControlledOperation.adjoint">
 <code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ControlledOperation.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ControlledOperation.adjoint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
-<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+<dd><p>Return the adjoint of a quantum operation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of <code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -713,8 +707,8 @@ around the X axis on the Bloch sphere.</p>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.XRotation.adjoint">
 <code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#XRotation.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.XRotation.adjoint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
-<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+<dd><p>Return the adjoint of a quantum operation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of <code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -738,8 +732,8 @@ the T gate and the S gate respectively, up to global phases.</p>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.ZRotation.adjoint">
 <code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ZRotation.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ZRotation.adjoint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
-<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+<dd><p>Return the adjoint of a quantum operation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of <code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -748,8 +742,7 @@ the T gate and the S gate respectively, up to global phases.</p>
 <dt id="acqdp.circuit.circuit.Circuit">
 <em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.circuit.</code><code class="sig-name descname">Circuit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'Circuit'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Circuit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Circuit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation"><code class="xref py py-class docutils literal notranslate"><span class="pre">acqdp.circuit.circuit.Operation</span></code></a></p>
-<p>Class for quantum circuits that can be manipulated by adding and removing
-operations.</p>
+<p>Class for quantum circuits that can be manipulated by adding and removing operations.</p>
 <p>Each operation in a circuit has a name that is unique within the circuit,
 not necessarily related to its own <code class="xref py py-attr docutils literal notranslate"><span class="pre">name</span></code> attribute. Each operation
 also has a time step which determines the order of the operations. For
@@ -808,9 +801,8 @@ ensuring its uniqueness within the circuit.</p></li>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.Circuit.operations_by_time">
 <em class="property">property </em><code class="sig-name descname">operations_by_time</code><a class="headerlink" href="#acqdp.circuit.circuit.Circuit.operations_by_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return an <code class="xref py py-class docutils literal notranslate"><span class="pre">OrderedDict</span></code> of dicts, which is an reorganization
-of <code class="xref py py-attr docutils literal notranslate"><span class="pre">operations_by_name</span></code> such that <code class="docutils literal notranslate"><span class="pre">c.operations_by_time[t][name]</span>
-<span class="pre">==</span> <span class="pre">c.operations_by_name[name]</span></code>, where <code class="docutils literal notranslate"><span class="pre">t</span></code> is the time step of the
+<dd><p>Return an <code class="xref py py-class docutils literal notranslate"><span class="pre">OrderedDict</span></code> of dicts, which is an reorganization of <code class="xref py py-attr docutils literal notranslate"><span class="pre">operations_by_name</span></code> such that
+<code class="docutils literal notranslate"><span class="pre">c.operations_by_time[t][name]==</span> <span class="pre">c.operations_by_name[name]</span></code>, where <code class="docutils literal notranslate"><span class="pre">t</span></code> is the time step of the
 operation in question.</p>
 <p>The returned <code class="docutils literal notranslate"><span class="pre">OrderedDict</span></code> in ordered by increasing time.</p>
 </dd></dl>
@@ -872,8 +864,8 @@ operations are all pure.</p>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.Circuit.adjoint">
 <code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#Circuit.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.Circuit.adjoint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
-<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+<dd><p>Return the adjoint of a quantum operation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of <code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -917,8 +909,8 @@ terminated with a newline.</p>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.ControlledCircuit.adjoint">
 <code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#ControlledCircuit.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.ControlledCircuit.adjoint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
-<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+<dd><p>Return the adjoint of a quantum operation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of <code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -979,8 +971,8 @@ operations. By default, all the coefficients are 1.</p></li>
 <dl class="py method">
 <dt id="acqdp.circuit.circuit.SuperPosition.adjoint">
 <code class="sig-name descname">adjoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/acqdp/circuit/circuit.html#SuperPosition.adjoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.circuit.SuperPosition.adjoint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the adjoint of a quantum operation. <code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of
-<code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
+<dd><p>Return the adjoint of a quantum operation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">~op</span></code> is an alias of <code class="docutils literal notranslate"><span class="pre">op.adjoint()</span></code>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1016,12 +1008,12 @@ operations. By default, all the coefficients are 1.</p></li>
 <dt id="acqdp.circuit.converter.Converter">
 <em class="property">class </em><code class="sig-prename descclassname">acqdp.circuit.converter.</code><code class="sig-name descname">Converter</code><a class="reference internal" href="_modules/acqdp/circuit/converter.html#Converter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.converter.Converter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>Generic converter class, with method mapping a circuit to
-a tensor network.</p>
+<p>Generic converter class, with method mapping a circuit to a tensor network.</p>
 <dl class="py method">
 <dt id="acqdp.circuit.converter.Converter.convert_pure">
 <em class="property">classmethod </em><code class="sig-name descname">convert_pure</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operation</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation">acqdp.circuit.circuit.Operation</a></span></em><span class="sig-paren">)</span> &#x2192; acqdp.tensor_network.tensor_valued.TensorValued<a class="reference internal" href="_modules/acqdp/circuit/converter.html#Converter.convert_pure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.converter.Converter.convert_pure" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do a pure conversion for noiseless circuit described as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code> object to a tensor network as a <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorValued</span></code> object.</p>
+<dd><p>Do a pure conversion for noiseless circuit described as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code> object to a tensor network as a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">TensorValued</span></code> object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>operation</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code>.) – the noisy circuit to convert.</p>
@@ -1035,7 +1027,8 @@ a tensor network.</p>
 <dl class="py method">
 <dt id="acqdp.circuit.converter.Converter.convert_control">
 <em class="property">classmethod </em><code class="sig-name descname">convert_control</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operation</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#acqdp.circuit.circuit.PureOperation" title="acqdp.circuit.circuit.PureOperation">acqdp.circuit.circuit.PureOperation</a></span></em><span class="sig-paren">)</span> &#x2192; acqdp.tensor_network.tensor_valued.TensorValued<a class="reference internal" href="_modules/acqdp/circuit/converter.html#Converter.convert_control"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.converter.Converter.convert_control" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do a control conversion for noisy circuit described as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code> object to a tensor network as a <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorValued</span></code> object.</p>
+<dd><p>Do a control conversion for noisy circuit described as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code> object to a tensor network as a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">TensorValued</span></code> object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>operation</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code>.) – the noisy circuit to convert.</p>
@@ -1049,7 +1042,8 @@ a tensor network.</p>
 <dl class="py method">
 <dt id="acqdp.circuit.converter.Converter.convert_density">
 <em class="property">classmethod </em><code class="sig-name descname">convert_density</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operation</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#acqdp.circuit.circuit.Operation" title="acqdp.circuit.circuit.Operation">acqdp.circuit.circuit.Operation</a></span></em><span class="sig-paren">)</span> &#x2192; acqdp.tensor_network.tensor_valued.TensorValued<a class="reference internal" href="_modules/acqdp/circuit/converter.html#Converter.convert_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#acqdp.circuit.converter.Converter.convert_density" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do a density conversion for noisy circuit described as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code> object to a tensor network as a <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorValued</span></code> object.</p>
+<dd><p>Do a density conversion for noisy circuit described as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code> object to a tensor network as a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">TensorValued</span></code> object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>operation</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Operation</span></code>.) – the noisy circuit to convert.</p>
@@ -1138,13 +1132,6 @@ a tensor network.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="qaoa.html"
                         title="next chapter">Demo: The Quantum Approximate Optimization Algorithm (QAOA)</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/acqdp.circuit.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
 <div id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
@@ -1154,7 +1141,11 @@ a tensor network.</p>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script><h3>See Also</h3>
+<ul>
+<li><a href="https://github.com/alibaba/acqdp">Source code on Github</a></li>
+<li><a href="https://pypi.org/project/acqdp/">PyPI Project</a></li>
+</ul>
         </div>
       </div>
       <div class="clearer"></div>

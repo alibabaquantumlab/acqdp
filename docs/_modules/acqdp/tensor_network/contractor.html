@@ -46,33 +46,30 @@
             
   <h1>Source code for acqdp.tensor_network.contractor</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">numpy</span>
-<span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">lru_cache</span>
-<span class="kn">from</span> <span class="nn">acqdp</span> <span class="kn">import</span> <span class="n">tensor_network</span>
 
 <span class="n">DEFAULT_ENGINE</span> <span class="o">=</span> <span class="s1">&#39;numpy&#39;</span>
 
 
 <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">getDeployPlugin</span><span class="p">(</span><span class="n">pluginName</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    plugin is just an installed python module that has &quot;tensor_network&quot; submodule</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;plugin is just an installed python module that has &quot;tensor_network&quot; submodule.&quot;&quot;&quot;</span>
     <span class="kn">import</span> <span class="nn">importlib</span>
     <span class="n">res</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">pluginName</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">res</span>
 
 
 <div class="viewcode-block" id="Contractor"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.Contractor">[docs]</a><span class="k">class</span> <span class="nc">Contractor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Contractor class for tensor network contraction takes a :class:`ContractionTask` object and execute it sequentially.</span>
-<span class="sd">    For :class:`NetworkContractionTask`, multi-processing is available for further accelarate the computation.</span>
+    <span class="sd">&quot;&quot;&quot;Contractor class for tensor network contraction takes a :class:`ContractionTask` object and execute it</span>
+<span class="sd">    sequentially. For :class:`NetworkContractionTask`, multi-processing is available for further accelarate the</span>
+<span class="sd">    computation.</span>
 
-<span class="sd">    :ivar backend: When set to `jax`, large tensor contractions will make use of the `jax` backend. `numpy.einsum` is used otherwise.</span>
-<span class="sd">    :ivar exeEngine: Extension interface for other contraction backends. Set to `None` by default. When set to `parallel`, subtasks will be computed simultaneously.</span>
+<span class="sd">    :ivar backend: When set to `jax`, large tensor contractions will make use of the `jax` backend. `numpy.einsum` is used</span>
+<span class="sd">        otherwise.</span>
+<span class="sd">    :ivar exeEngine: Extension interface for other contraction backends. Set to `None` by default. When set to `parallel`,</span>
+<span class="sd">        subtasks will be computed simultaneously.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exeEngine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -80,10 +77,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">backend</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
 
-
 <div class="viewcode-block" id="Contractor.execute"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.Contractor.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">lst</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Execute a contraction task.</span>
+        <span class="sd">&quot;&quot;&quot;Execute a contraction task.</span>
 
 <span class="sd">        :param tasks: The task to be executed.</span>
 <span class="sd">        :type tasks: :class:`acqdp.ContractionScheme`</span>
@@ -115,11 +110,11 @@
             <span class="k">return</span> <span class="n">res</span></div>
 
     <span class="k">def</span> <span class="nf">_execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                      <span class="n">task</span><span class="p">,</span>
-                      <span class="n">track</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                      <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                      <span class="n">cnt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                      <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                 <span class="n">task</span><span class="p">,</span>
+                 <span class="n">track</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">cnt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">cnt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">commands</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">commands</span>
         <span class="k">else</span><span class="p">:</span>
@@ -138,7 +133,7 @@
                     <span class="n">res</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">lhs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;fix_idx&#39;</span><span class="p">],</span>
                                          <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;fix_idx&#39;</span><span class="p">])))[</span><span class="nb">tuple</span><span class="p">(</span>
                                              <span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;fix_to&#39;</span><span class="p">]])]</span>
-                    <span class="n">rhs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">lhs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">res</span><span class="p">)</span>
+                    <span class="n">rhs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">lhs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">operation</span> <span class="o">==</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span>
                         <span class="n">init_norm</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">lhs</span><span class="p">])</span>
@@ -149,7 +144,7 @@
                                 <span class="n">res</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;expr&#39;</span><span class="p">](</span><span class="o">*</span><span class="p">[</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">lhs</span><span class="p">])</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">res</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;subscripts&#39;</span><span class="p">],</span>
-                                               <span class="o">*</span><span class="p">[</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">lhs</span><span class="p">]))</span>
+                                                           <span class="o">*</span><span class="p">[</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">lhs</span><span class="p">]))</span>
                     <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="s1">&#39;n&#39;</span><span class="p">:</span>
                         <span class="n">init_norm</span> <span class="o">=</span> <span class="mi">0</span>
                         <span class="n">res</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;func&#39;</span><span class="p">](</span><span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">lhs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">lhs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
@@ -198,6 +193,7 @@
 
 <span class="n">_defaultContractor</span> <span class="o">=</span> <span class="kc">None</span>
 
+
 <span class="k">def</span> <span class="nf">getDefault</span><span class="p">():</span>
     <span class="k">global</span> <span class="n">_defaultContractor</span>
     <span class="k">if</span> <span class="n">_defaultContractor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -233,7 +229,11 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script><h3>See Also</h3>
+<ul>
+<li><a href="https://github.com/alibaba/acqdp">Source code on Github</a></li>
+<li><a href="https://pypi.org/project/acqdp/">PyPI Project</a></li>
+</ul>
         </div>
       </div>
       <div class="clearer"></div>

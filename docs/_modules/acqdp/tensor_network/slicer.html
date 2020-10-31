@@ -46,12 +46,10 @@
             
   <h1>Source code for acqdp.tensor_network.slicer</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">acqdp.tensor_network.local_optimizer</span> <span class="kn">import</span> <span class="n">defaultOrderResolver</span><span class="p">,</span> <span class="n">LocalOptimizer</span>
-<span class="kn">from</span> <span class="nn">acqdp.tensor_network.contraction</span> <span class="kn">import</span> <span class="n">ContractionCost</span><span class="p">,</span> <span class="n">ContractionScheme</span>
+<span class="kn">from</span> <span class="nn">acqdp.tensor_network.contraction</span> <span class="kn">import</span> <span class="n">ContractionScheme</span>
 <span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">numpy</span>
-<span class="kn">import</span> <span class="nn">opt_einsum</span>
-<span class="kn">import</span> <span class="nn">tqdm</span>
 
 
 <div class="viewcode-block" id="Slicer"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.Slicer">[docs]</a><span class="k">class</span> <span class="nc">Slicer</span><span class="p">:</span>
@@ -65,6 +63,7 @@
 <span class="sd">    :ivar num_threads: Number of threads for multi-processing.</span>
 <span class="sd">    :ivar slice_thres: Automatically slice edges that introduce an overhed below this threshold. Set to 0.02 by default.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">num_iter_before</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">num_iter_middle</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
@@ -109,11 +108,11 @@
                     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">slice_edges</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_slice</span><span class="p">:</span>
                         <span class="k">break</span>
                     <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">cost</span><span class="o">.</span><span class="n">t</span><span class="p">))</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_tw</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span>
-                            <span class="n">slice_edges</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_slice</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span> <span class="c1"># early termination</span>
+                            <span class="n">slice_edges</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_slice</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># early termination</span>
                         <span class="k">break</span>
                 <span class="n">new_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_optimizer</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span>
                     <span class="n">tn</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_iter_after</span><span class="p">)</span>
-                <span class="n">new_y</span><span class="o">.</span><span class="n">cost</span><span class="o">.</span><span class="n">k</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">slice_edges</span><span class="p">)</span>
+                <span class="n">new_y</span><span class="o">.</span><span class="n">cost</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">slice_edges</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">new_y</span><span class="o">.</span><span class="n">cost</span><span class="o">.</span><span class="n">t</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">max_tw</span><span class="p">:</span>
                     <span class="n">y</span> <span class="o">=</span> <span class="n">new_y</span>
                 <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">cost</span><span class="o">.</span><span class="n">t</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">max_tw</span><span class="p">:</span>
@@ -126,9 +125,11 @@
                 <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">_biggest_weight_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Find an edge or a list of edges, slicing of which introduces an overhead each that is below a threshold given by self.slice_thres, or a minimal overhead if self.slice_thres is unattainable.</span>
-<span class="sd">        The method enumerates all edges that appear frequently on the stem of the contraction tree. It tries to introduce as minimal overhead as possible by flipping branches on the stem while trying to slice the edges.</span>
+        <span class="sd">&quot;&quot;&quot;Find an edge or a list of edges, slicing of which introduces an overhead each that is below a threshold given</span>
+<span class="sd">        by self.slice_thres, or a minimal overhead if self.slice_thres is unattainable.</span>
+
+<span class="sd">        The method enumerates all edges that appear frequently on the stem of the contraction tree. It tries to</span>
+<span class="sd">        introduce as minimal overhead as possible by flipping branches on the stem while trying to slice the edges.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tn_copy</span> <span class="o">=</span> <span class="n">tn</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">tn_copy</span><span class="o">.</span><span class="n">fix</span><span class="p">()</span>
@@ -261,9 +262,8 @@
 
 
 <div class="viewcode-block" id="MPSlicer"><a class="viewcode-back" href="../../../tensor_network.html#acqdp.tensor_network.MPSlicer">[docs]</a><span class="k">class</span> <span class="nc">MPSlicer</span><span class="p">(</span><span class="n">Slicer</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Multi-processing slicing, by concurrently trying different slicing routes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Multi-processing slicing, by concurrently trying different slicing routes.&quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">order_gen</span><span class="p">):</span>
         <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_suc_candidates</span><span class="p">:</span>
@@ -297,7 +297,11 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script><h3>See Also</h3>
+<ul>
+<li><a href="https://github.com/alibaba/acqdp">Source code on Github</a></li>
+<li><a href="https://pypi.org/project/acqdp/">PyPI Project</a></li>
+</ul>
         </div>
       </div>
       <div class="clearer"></div>

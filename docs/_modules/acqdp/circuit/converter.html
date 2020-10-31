@@ -46,15 +46,15 @@
             
   <h1>Source code for acqdp.circuit.converter</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">.circuit</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Operation</span><span class="p">,</span>
-                              <span class="n">ImmutableOperation</span><span class="p">,</span>
-                              <span class="n">PureOperation</span><span class="p">,</span>
-                              <span class="n">Circuit</span><span class="p">,</span>
-                              <span class="n">ControlledOperation</span><span class="p">,</span>
-                              <span class="n">Controlled</span><span class="p">,</span>
-                              <span class="n">ControlledCircuit</span><span class="p">,</span>
-                              <span class="n">CompState</span><span class="p">,</span>
-                              <span class="n">CompMeas</span><span class="p">,</span>
-                              <span class="n">SuperPosition</span><span class="p">)</span>
+                      <span class="n">ImmutableOperation</span><span class="p">,</span>
+                      <span class="n">PureOperation</span><span class="p">,</span>
+                      <span class="n">Circuit</span><span class="p">,</span>
+                      <span class="n">ControlledOperation</span><span class="p">,</span>
+                      <span class="n">Controlled</span><span class="p">,</span>
+                      <span class="n">ControlledCircuit</span><span class="p">,</span>
+                      <span class="n">CompState</span><span class="p">,</span>
+                      <span class="n">CompMeas</span><span class="p">,</span>
+                      <span class="n">SuperPosition</span><span class="p">)</span>
 
 <span class="kn">from</span> <span class="nn">acqdp.tensor_network.tensor_valued</span> <span class="kn">import</span> <span class="n">TensorValued</span>
 
@@ -62,23 +62,17 @@
 
 <span class="kn">from</span> <span class="nn">acqdp.tensor_network.tensor_network</span> <span class="kn">import</span> <span class="n">TensorNetwork</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
 
 <div class="viewcode-block" id="Converter"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.converter.Converter">[docs]</a><span class="k">class</span> <span class="nc">Converter</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generic converter class, with method mapping a circuit to</span>
-<span class="sd">    a tensor network.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Generic converter class, with method mapping a circuit to a tensor network.&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="Converter.convert_pure"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.converter.Converter.convert_pure">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">convert_pure</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">operation</span><span class="p">:</span> <span class="n">Operation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorValued</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Do a pure conversion for noiseless circuit described as a :class:`Operation` object to a tensor network as a :class:`TensorValued` object.</span>
+        <span class="sd">&quot;&quot;&quot;Do a pure conversion for noiseless circuit described as a :class:`Operation` object to a tensor network as a</span>
+<span class="sd">        :class:`TensorValued` object.</span>
 
 <span class="sd">        :param operation: the noisy circuit to convert.</span>
 <span class="sd">        :type operation: :class:`Operation`.</span>
 <span class="sd">        :returns:  :class:`TensorValued` -- the tensor network to describe the input noisy circuit.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">operation</span><span class="o">.</span><span class="n">is_pure</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid operation: trying to do pure conversion for noisy circuit&quot;</span><span class="p">)</span>
@@ -140,7 +134,7 @@
                     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">op</span><span class="o">.</span><span class="n">_output_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
                         <span class="n">q</span> <span class="o">=</span> <span class="n">qubits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                         <span class="k">if</span> <span class="n">q</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dic</span><span class="p">:</span>
-                            <span class="n">dic_out</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_step</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+                            <span class="n">dic_out</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
                             <span class="n">out_edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dic_out</span><span class="p">[</span><span class="n">q</span><span class="p">])</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">edge</span> <span class="o">=</span> <span class="n">dic</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
@@ -167,13 +161,12 @@
 
 <div class="viewcode-block" id="Converter.convert_control"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.converter.Converter.convert_control">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">convert_control</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">operation</span><span class="p">:</span> <span class="n">PureOperation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorValued</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Do a control conversion for noisy circuit described as a :class:`Operation` object to a tensor network as a :class:`TensorValued` object.</span>
+        <span class="sd">&quot;&quot;&quot;Do a control conversion for noisy circuit described as a :class:`Operation` object to a tensor network as a</span>
+<span class="sd">        :class:`TensorValued` object.</span>
 
 <span class="sd">        :param operation: the noisy circuit to convert.</span>
 <span class="sd">        :type operation: :class:`Operation`.</span>
 <span class="sd">        :returns:  :class:`TensorValued` -- the tensor network to describe the input noisy circuit.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">operation</span><span class="o">.</span><span class="n">is_pure</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Noisy operation does not have pure block-diagonal form&quot;</span><span class="p">)</span>
@@ -184,13 +177,12 @@
 
 <div class="viewcode-block" id="Converter.convert_density"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.converter.Converter.convert_density">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">convert_density</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">operation</span><span class="p">:</span> <span class="n">Operation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorValued</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Do a density conversion for noisy circuit described as a :class:`Operation` object to a tensor network as a :class:`TensorValued` object.</span>
+        <span class="sd">&quot;&quot;&quot;Do a density conversion for noisy circuit described as a :class:`Operation` object to a tensor network as a</span>
+<span class="sd">        :class:`TensorValued` object.</span>
 
 <span class="sd">        :param operation: the noisy circuit to convert.</span>
 <span class="sd">        :type operation: :class:`Operation`.</span>
 <span class="sd">        :returns:  :class:`TensorValued` -- the tensor network to describe the input noisy circuit.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">PureOperation</span><span class="p">):</span>
             <span class="n">tp</span> <span class="o">=</span> <span class="n">operation</span><span class="o">.</span><span class="n">tensor_pure</span>
@@ -260,7 +252,11 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script><h3>See Also</h3>
+<ul>
+<li><a href="https://github.com/alibaba/acqdp">Source code on Github</a></li>
+<li><a href="https://pypi.org/project/acqdp/">PyPI Project</a></li>
+</ul>
         </div>
       </div>
       <div class="clearer"></div>

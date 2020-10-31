@@ -54,7 +54,7 @@
 <span class="kn">from</span> <span class="nn">acqdp.tensor_network.tensor_valued</span> <span class="kn">import</span> <span class="n">TensorValued</span>
 <span class="kn">from</span> <span class="nn">acqdp.tensor_network.tensor</span> <span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span> <span class="nn">acqdp.tensor_network.tensor_network</span> <span class="kn">import</span> <span class="n">TensorNetwork</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 
 <span class="n">INDENT</span> <span class="o">=</span> <span class="s2">&quot;  &quot;</span>
@@ -117,7 +117,8 @@
 <span class="sd">        are themselves :class:`Circuit` instances.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Operation</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">Circuit</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))),</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">shape</span><span class="p">))),</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">Circuit</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))),</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">other</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">shape</span><span class="p">))),</span> <span class="mi">0</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">NotImplemented</span></div>
 
@@ -168,8 +169,8 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">tensor_pure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Convert the operation into a tensor network representing the action</span>
-<span class="sd">        of the operation in the pure state picture.</span>
+        <span class="sd">&quot;&quot;&quot;Convert the operation into a tensor network representing the action of the operation in the pure state</span>
+<span class="sd">        picture.</span>
 
 <span class="sd">        Examples of tensor representations in the pure state picture include</span>
 <span class="sd">        state vectors of pure states, and unitary matrices of unitary gates.</span>
@@ -181,23 +182,21 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">tensor_density</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Convert the operation into a tensor network representing the action</span>
-<span class="sd">        of the operation in the density matrix picture.</span>
+        <span class="sd">&quot;&quot;&quot;Convert the operation into a tensor network representing the action of the operation in the density matrix</span>
+<span class="sd">        picture.</span>
 
-<span class="sd">        Examples of tensor representations in the density matrix picture include</span>
-<span class="sd">        density matrices of general quantum states, and Choi matrices of quantum</span>
-<span class="sd">        operations. As a special case, when the operation is pure, the tensor</span>
-<span class="sd">        network returned by :attr:`tensor_density` will consist of two disjoint</span>
-<span class="sd">        components, one being the tensor network returned by :attr:`tensor_pure`</span>
-<span class="sd">        and the other being its adjoint.</span>
+<span class="sd">        Examples of tensor representations in the density matrix picture include density matrices of general quantum</span>
+<span class="sd">        states, and Choi matrices of quantum operations. As a special case, when the operation is pure, the tensor</span>
+<span class="sd">        network returned by :attr:`tensor_density` will consist of two disjoint components, one being the tensor network</span>
+<span class="sd">        returned by :attr:`tensor_pure` and the other being its adjoint.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">.converter</span> <span class="kn">import</span> <span class="n">Converter</span>
         <span class="k">return</span> <span class="n">Converter</span><span class="o">.</span><span class="n">convert_density</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">tensor_control</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Convert a controlled operation into a tensor network in the pure</span>
-<span class="sd">        state picture, but with only one open edge for each controlling qubit.</span>
+        <span class="sd">&quot;&quot;&quot;Convert a controlled operation into a tensor network in the pure state picture, but with only one open edge</span>
+<span class="sd">        for each controlling qubit.</span>
 
 <span class="sd">        A qubit in an operation can be regarded as a controlling qubit if its</span>
 <span class="sd">        value in the computational basis is never changed by the operation. As</span>
@@ -214,8 +213,9 @@
         <span class="k">return</span> <span class="n">Converter</span><span class="o">.</span><span class="n">convert_control</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Operation.adjoint"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Operation.adjoint">[docs]</a>    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
-        <span class="sd">&quot;&quot;&quot;Return the adjoint of a quantum operation. ``~op`` is an alias of</span>
-<span class="sd">        ``op.adjoint()``.</span>
+        <span class="sd">&quot;&quot;&quot;Return the adjoint of a quantum operation.</span>
+
+<span class="sd">        ``~op`` is an alias of ``op.adjoint()``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
@@ -224,8 +224,7 @@
 
 
 <div class="viewcode-block" id="ImmutableOperation"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ImmutableOperation">[docs]</a><span class="k">class</span> <span class="nc">ImmutableOperation</span><span class="p">(</span><span class="n">Operation</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Class for quantum operations with explicit tensor representations. The</span>
-<span class="sd">    operation is not supposed to be modified.</span>
+    <span class="sd">&quot;&quot;&quot;Class for quantum operations with explicit tensor representations. The operation is not supposed to be modified.</span>
 
 <span class="sd">    :param data: A tensor representation of the operation. For this base class,</span>
 <span class="sd">        it will be the tensor returned by :attr:`~Operation.tensor_density`.</span>
@@ -258,8 +257,7 @@
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
 
 <div class="viewcode-block" id="ImmutableOperation.process"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.ImmutableOperation.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Convert the input data into an appropriately shaped tensor, and</span>
-<span class="sd">        initialize the operation with this tensor.</span>
+        <span class="sd">&quot;&quot;&quot;Convert the input data into an appropriately shaped tensor, and initialize the operation with this tensor.</span>
 
 <span class="sd">        A derived class that uses a different tensor representation of the</span>
 <span class="sd">        operation should override this function in order to do shape checking</span>
@@ -303,7 +301,6 @@
 <span class="sd">        :returns: A quantum operation constructed from the given Kraus operator</span>
 <span class="sd">            representation.</span>
 <span class="sd">        :rtype: ImmutableOperation</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">lin</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">shape</span> <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;i&#39;</span><span class="p">])</span>
         <span class="n">lout</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">shape</span> <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;o&#39;</span><span class="p">])</span>
@@ -349,7 +346,6 @@
 
 <span class="sd">    :ivar name: Name of the quantum state. Defaults to &quot;State&quot;.</span>
 <span class="sd">    :vartype name: str, optional</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
@@ -578,6 +574,7 @@
 <span class="sd">        False.</span>
 <span class="sd">    :vartype self_adjoint: bool, optional</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
                  <span class="n">shape</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
@@ -635,6 +632,7 @@
 <span class="sd">    :ivar self_adjoint: Whether the gate is self-adjoint. Defaults to False.</span>
 <span class="sd">    :vartype self_adjoint: bool, optional</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">num_cbits</span><span class="p">,</span>
                  <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -696,8 +694,8 @@
 <span class="sd">&quot;&quot;&quot;Single-qubit :math:`\\sqrt{Y}` gate.&quot;&quot;&quot;</span>
 
 <span class="n">CNOTGate</span> <span class="o">=</span> <span class="n">ControlledOperation</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]]),</span>
-                             <span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;io&#39;</span><span class="p">],</span>
-                             <span class="s2">&quot;CNOT&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                               <span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;io&#39;</span><span class="p">],</span>
+                               <span class="s2">&quot;CNOT&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 <span class="sd">&quot;&quot;&quot;Two-qubit CNOT gate.&quot;&quot;&quot;</span>
 
 <span class="n">ZeroState</span> <span class="o">=</span> <span class="n">PureState</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="s1">&#39;|0&gt;&#39;</span><span class="p">)</span>
@@ -709,10 +707,10 @@
 <span class="n">CompState</span> <span class="o">=</span> <span class="p">[</span><span class="n">ZeroState</span><span class="p">,</span> <span class="n">OneState</span><span class="p">]</span>
 <span class="sd">&quot;&quot;&quot;List of the computational basis states, :math:`|0\\rangle` and :math:`|1\\rangle`.&quot;&quot;&quot;</span>
 
-<span class="n">PlusState</span> <span class="o">=</span> <span class="n">PureState</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]),</span> <span class="s1">&#39;|+&gt;&#39;</span><span class="p">)</span>
+<span class="n">PlusState</span> <span class="o">=</span> <span class="n">PureState</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]),</span> <span class="s1">&#39;|+&gt;&#39;</span><span class="p">)</span>
 <span class="sd">&quot;&quot;&quot;Single-qubit state :math:`|+\\rangle`.&quot;&quot;&quot;</span>
 
-<span class="n">MinusState</span> <span class="o">=</span> <span class="n">PureState</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]),</span> <span class="s1">&#39;|-&gt;&#39;</span><span class="p">)</span>
+<span class="n">MinusState</span> <span class="o">=</span> <span class="n">PureState</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]),</span> <span class="s1">&#39;|-&gt;&#39;</span><span class="p">)</span>
 <span class="sd">&quot;&quot;&quot;Single-qubit state :math:`|-\\rangle`.&quot;&quot;&quot;</span>
 
 <span class="n">FourierState</span> <span class="o">=</span> <span class="p">[</span><span class="n">PlusState</span><span class="p">,</span> <span class="n">MinusState</span><span class="p">]</span>
@@ -736,7 +734,7 @@
 <span class="n">FourierMeas</span> <span class="o">=</span> <span class="p">[</span><span class="n">PlusMeas</span><span class="p">,</span> <span class="n">MinusMeas</span><span class="p">]</span>
 <span class="sd">&quot;&quot;&quot;List of the computational basis measurements, :math:`\\langle +|` and :math:`\\langle -|`.&quot;&quot;&quot;</span>
 
-<span class="n">NDCompMeas</span> <span class="o">=</span> <span class="n">Channel</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TensorNetwork</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">bond_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="s1">&#39;ND&#39;</span><span class="p">)</span>
+<span class="n">NDCompMeas</span> <span class="o">=</span> <span class="n">Channel</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TensorNetwork</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bond_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="s1">&#39;ND&#39;</span><span class="p">)</span>
 <span class="sd">&quot;&quot;&quot;A non-destructive computational basis measurement.</span>
 
 <span class="sd">This is equivalent to :class:`acqdp.circuit.noise.Dephasing()`, but with a</span>
@@ -763,11 +761,12 @@
 <span class="sd">    :ivar angle: The rotation angle :math:`\\theta`.</span>
 <span class="sd">    :vartype angle: float</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="n">angle</span>
         <span class="n">Unitary</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
                          <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)],</span>
-                                  <span class="p">[</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)]]),</span>
+                                   <span class="p">[</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)]]),</span>
                          <span class="s2">&quot;R_X&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="XRotation.adjoint"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.XRotation.adjoint">[docs]</a>    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -787,6 +786,7 @@
 <span class="sd">    :ivar angle: The rotation angle :math:`\\theta`.</span>
 <span class="sd">    :vartype angle: float</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="n">angle</span>
         <span class="n">Diagonal</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
@@ -798,8 +798,7 @@
 
 
 <div class="viewcode-block" id="Circuit"><a class="viewcode-back" href="../../../acqdp.circuit.html#acqdp.circuit.circuit.Circuit">[docs]</a><span class="k">class</span> <span class="nc">Circuit</span><span class="p">(</span><span class="n">Operation</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Class for quantum circuits that can be manipulated by adding and removing</span>
-<span class="sd">    operations.</span>
+    <span class="sd">&quot;&quot;&quot;Class for quantum circuits that can be manipulated by adding and removing operations.</span>
 
 <span class="sd">    Each operation in a circuit has a name that is unique within the circuit,</span>
 <span class="sd">    not necessarily related to its own :attr:`name` attribute. Each operation</span>
@@ -822,6 +821,7 @@
 <span class="sd">          circuit the operation is applied to.</span>
 <span class="sd">    :vartype operations_by_name: Dict[hashable, dict]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Circuit&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">Operation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span> <span class="o">=</span> <span class="p">{}</span>
@@ -869,7 +869,7 @@
             <span class="n">name</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_step</span><span class="p">,</span>
                     <span class="nb">tuple</span><span class="p">([</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">qubits</span><span class="p">]))</span>
         <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">qubits</span><span class="p">))</span>
-           <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
+                <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid qubits: qubits not match operation.&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;operation&quot;</span><span class="p">:</span> <span class="n">operation</span><span class="p">,</span>
                                          <span class="s2">&quot;time_step&quot;</span><span class="p">:</span> <span class="n">time_step</span><span class="p">,</span>
@@ -878,9 +878,8 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">operations_by_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return an :class:`OrderedDict` of dicts, which is an reorganization</span>
-<span class="sd">        of :attr:`operations_by_name` such that ``c.operations_by_time[t][name]</span>
-<span class="sd">        == c.operations_by_name[name]``, where ``t`` is the time step of the</span>
+        <span class="sd">&quot;&quot;&quot;Return an :class:`OrderedDict` of dicts, which is an reorganization of :attr:`operations_by_name` such that</span>
+<span class="sd">        ``c.operations_by_time[t][name]== c.operations_by_name[name]``, where ``t`` is the time step of the</span>
 <span class="sd">        operation in question.</span>
 
 <span class="sd">        The returned ``OrderedDict`` in ordered by increasing time.</span>
@@ -933,7 +932,8 @@
                 <span class="n">gate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations_by_name</span><span class="p">[</span><span class="n">gate_name</span><span class="p">]</span>
                 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">qubit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gate</span><span class="p">[</span><span class="s1">&#39;qubits&#39;</span><span class="p">]):</span>
                     <span class="k">if</span> <span class="n">last_time_used</span><span class="p">[</span><span class="n">qubit</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">time_step</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid connection: Qubit </span><span class="si">{}</span><span class="s2"> used multiple times at timestep </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">qubit</span><span class="p">,</span> <span class="n">time_step</span><span class="p">))</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="s2">&quot;Invalid connection: Qubit </span><span class="si">{}</span><span class="s2"> used multiple times at timestep </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">qubit</span><span class="p">,</span> <span class="n">time_step</span><span class="p">))</span>
                     <span class="n">last_time_used</span><span class="p">[</span><span class="n">qubit</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_step</span>
                     <span class="n">shape</span><span class="p">[</span><span class="n">qubit</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">trans_dict</span><span class="p">[</span><span class="n">letter</span><span class="p">]</span> <span class="k">for</span> <span class="n">letter</span> <span class="ow">in</span> <span class="n">gate</span><span class="p">[</span><span class="s1">&#39;operation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
         <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;^o?(io)*i?$&quot;</span><span class="p">)</span>
@@ -946,8 +946,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Return True if the circuit is valid.</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the circuit is valid.</span>
 
 <span class="sd">        See :attr:`shape` for ways a circuit can be invalid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1007,6 +1006,7 @@
 <span class="sd">        controlling qubit is in the :math:`|1\\rangle` state.</span>
 <span class="sd">    :vartype conditioned_on: bool, optional</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">circuit</span><span class="p">,</span>
                  <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -1030,8 +1030,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Return True if the circuit is valid.</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the circuit is valid.</span>
 
 <span class="sd">        See :attr:`Circuit.shape` for ways a circuit can be invalid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1095,8 +1094,8 @@
 
 <span class="sd">    :ivar name: Name of the superposition operation. Defaults to &quot;SuperPos&quot;.</span>
 <span class="sd">    :vartype name: str, optional</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">operations</span><span class="p">,</span>
                  <span class="n">coefs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -1176,7 +1175,11 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script><h3>See Also</h3>
+<ul>
+<li><a href="https://github.com/alibaba/acqdp">Source code on Github</a></li>
+<li><a href="https://pypi.org/project/acqdp/">PyPI Project</a></li>
+</ul>
         </div>
       </div>
       <div class="clearer"></div>
